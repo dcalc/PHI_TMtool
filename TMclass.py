@@ -3,18 +3,98 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 class RAW:
+    def __call__(self):
+        print(f'Variable info: ')
+        print(f'Variable type: {type(self)}')
+        print(f'Start date: {self.start}')
+        print(f'End date: {self.end}')
+        print(f'Cadence: {self.cadence} mins')
+        print(f'Shape: ({self.Y},{self.X},{self.P},{self.L})')
+        print(f'Bit depth: {self.n_bits}')
+        print(f'Number of raw datasets: {self.n_datasets}')
+        print(f'Raw data+metadata size: {self.data} MB')
+        print(f'Raw metadata size: {self.metadata} MB')
+        
     pass
 class PROC:
+    def __call__(self):
+        print(f'Variable info: ')
+        print(f'Variable type: {type(self)}')
+        print(f'Start date: {self.start}')
+        print(f'End date: {self.end}')
+        print(f'Processing time per data: {self.cpu_time} mins')
+        print(f'X crop factor: {self.crop_x}')
+        print(f'Y crop factor: {self.crop_y}')
+        print(f'Number of outputs: {self.n_outputs}')
+        print(f'Intermediate steps: {self.interm_steps}')
+        print(f'Bit depth: {self.n_bits}')
+        print(f'Bit depth for intermediate data: {self.interm_n_bits}')
+        print(f'Number of processed datasets: {self.n_datasets}')
+        print(f'Processed data+metadata size: {self.data_tot} MB')
+        
     pass
 class COMPR:
+    def __call__(self):
+        print(f'Variable info: ')
+        print(f'Variable type: {type(self)}')
+        print(f'Start date: {self.start}')
+        print(f'End date: {self.end}')
+        print(f'Compressing time per data: {self.cpu_time} mins')
+        print(f'X crop factor: {self.crop_x}')
+        print(f'Y crop factor: {self.crop_y}')
+        print(f'Number of outputs: {self.n_outputs}')
+        print(f'Bit depth: {self.n_bits}')
+        print(f'Number of compressed datasets: {self.n_datasets}')
+        print(f'Compressed data+metadata size: {self.data_tot} MB')
+        
     pass
 class FLUSH:
+    def __call__(self):
+        print(f'Variable info: ')
+        print(f'Variable type: {type(self)}')
+        print(f'Start date: {self.start}')
+        print(f'End date: {self.end}')
+        print(f'Amount of data to be flushed: {self.data} MB')
+        
     pass
 class CAL:
+    def __call__(self):
+        print(f'Variable info: ')
+        print(f'Variable type: {type(self)}')
+        print(f'Start date: {self.start}')
+        print(f'End date: {self.end}')
+        print(f'Amount of calibration data: {self.data} MB')
+        
     pass
 class CROP:
+    def __call__(self):
+        print(f'Variable info: ')
+        print(f'Variable type: {type(self)}')
+        print(f'Start date: {self.start}')
+        print(f'End date: {self.end}')
+        print(f'Cropping time per data: {self.cpu_time} mins')
+        print(f'X crop factor: {self.crop_x}')
+        print(f'Y crop factor: {self.crop_y}')
+        print(f'Number of outputs: {self.n_outputs}')
+        print(f'Bit depth: {self.n_bits}')
+        print(f'Number of cropped datasets: {self.n_datasets}')
+        print(f'Cropped data+metadata size: {self.data_tot} MB')
+        
     pass
 class PACK:
+    def __call__(self):
+        print(f'Variable info: ')
+        print(f'Variable type: {type(self)}')
+        print(f'Start date: {self.start}')
+        print(f'End date: {self.end}')
+        print(f'Packing time per data: {self.cpu_time} mins')
+        print(f'X crop factor: {self.crop_x}')
+        print(f'Y crop factor: {self.crop_y}')
+        print(f'Number of outputs: {self.n_outputs}')
+        print(f'Bit depth: {self.n_bits}')
+        print(f'Number of packed datasets: {self.n_datasets}')
+        print(f'Packed data+metadata size: {self.data_tot} MB')
+        
     pass
 
 class PHI_MODE:
@@ -580,7 +660,7 @@ class PHI_MODE:
     def extract(self,start,level = 'raw'):
         self.__checkMode__(['HRT','FDT'])
         if not hasattr(self,'raw'):
-            raise ValueError('You must run at least .observation() before packing! Bye bye.')
+            raise ValueError('You must run at least .observation() before extracting! Bye bye.')
 #         try:
 #             temp = getattr(self,level)
 #         except:
@@ -644,16 +724,27 @@ class PHI_MODE:
     
         
         
-    def calibration(self,start,end,data_vol):
+    def calibration(self,start,end,data_vol,insert='data_vol'):
         self.__checkMode__('CAL')
         self.cal = CAL()
         self.cal.start = start
         self.cal.end = end
-        self.cal.data = data_vol #MB
         
-        return {'tm_type':type(self.cal), 'val':self.cal.data,\
+        if insert == 'data_vol':
+            self.cal.data = data_vol #MB
+            return {'tm_type':type(self.cal), 'val':self.cal.data,\
                 'key':'cal', 'start':self.cal.start, 'end':self.cal.end}
-    
+        
+        if insert == 'n_datasets':
+            n_datasets = data_vol
+            data_vol = 2048*2048*24*32/8e6 *(32+16+6)/32 * n_datasets
+            compr_vol = 2048*2048*24*6/8e6 * n_datasets
+            self.cal.data = data_vol #MB
+            return ({'tm_type':type(self.cal), 'val':self.cal.data-compr_vol,\
+                'key':'cal', 'start':self.cal.start, 'end':self.cal.end},
+                   {'tm_type':type(self.cal), 'val':compr_vol,\
+                'key':'compr', 'start':self.cal.start, 'end':self.cal.end})
+        
         
 
 class PHI_MEMORY:
@@ -706,7 +797,30 @@ class PHI_MEMORY:
                             'cal':[0], 'flush':[0], 'pack':[0],\
                              'start':[start],'end':[start],'type':[type(self)]}
         
-    
+    def __call__(self,index,history=False):
+        if index == 1:
+            temp = self.part1
+        elif index == 2:
+            temp = self.part2
+        else:
+            raise ValueError('index must be 1 or 2')
+        
+        print(temp.total, 'MB in partition',index)
+        print(temp.occu, 'MB used in partition',index)
+        print(temp.free, 'MB free in partition',index)
+        print(temp.raw, 'MB used by raw data in partition',index)
+        print(temp.crop, 'MB used by cropped data in partition',index)
+        print(temp.proc, 'MB used by processed data in partition',index)
+        print(temp.pack, 'MB used by packed data in partition',index)
+        print(temp.compr, 'MB used by compressed data in partition',index)
+        print(temp.cal, 'MB used by calibration data in partition',index)
+        print(temp.flush, 'MB to be flushed in partition',index)
+
+        if history:
+            print('history:')
+            [print(i,':',v) for i,v in temp.history.items()];
+
+
     def saving(self, index, tm_type, val, key, start, end):
         
         """
@@ -878,15 +992,16 @@ class PHI_MEMORY:
             fig.autofmt_xdate()
         
             if bar:
-                ax.bar(x1[-1], temp.raw, color='g', alpha = .5)
-                ax.bar(x1[-1], temp.proc, color='b', alpha = .5, bottom = temp.raw)
-                ax.bar(x1[-1], temp.cal, color='m', alpha = .5, bottom = temp.raw+temp.proc)
-#                 ax.bar(x1[-1], f0[-1], 'c', alpha = .5)
-                ax.bar(x1[-1], temp.compr, color='orange', alpha = .5, bottom = temp.raw+temp.proc+temp.cal)
-                ax.bar(x1[-1], temp.crop, color='k', alpha = .5, bottom = temp.raw+temp.proc+temp.cal+temp.compr)
-                ax.bar(x1[-1], temp.pack, color='pink', alpha = .5, bottom = temp.raw+temp.proc+temp.cal+temp.compr+temp.crop)
-#                 ax.bar(x1[-1] + (x1[-1]-x1[0])/len(x1), temp.flush, color='c', alpha = .5)
-            
+                args = {'width':(x1[-1] - x1[0]).total_seconds()/60/60/24 * 0.04, 'alpha':0.5}
+                ax.bar(x1[-1], temp.raw, color='g', **args)
+                ax.bar(x1[-1], temp.proc, color='b', **args, bottom = temp.raw)
+                ax.bar(x1[-1], temp.cal, color='m', **args, bottom = temp.raw+temp.proc)
+#                 ax.bar(x1[-1], f0[-1], 'c', **args)
+                ax.bar(x1[-1], temp.compr, color='orange', **args, bottom = temp.raw+temp.proc+temp.cal)
+                ax.bar(x1[-1], temp.crop, color='k', **args, bottom = temp.raw+temp.proc+temp.cal+temp.compr)
+                ax.bar(x1[-1], temp.pack, color='pink', **args, bottom = temp.raw+temp.proc+temp.cal+temp.compr+temp.crop)
+#                 ax.bar(x1[-1] + (x1[-1]-x1[0])/len(x1), temp.flush, color='c', **args)
+
 #         if bar:
 #             N = 4
 #             t0 = [phi.proc1, 0, phi.proc2, 0]
@@ -989,5 +1104,5 @@ class PHI_MEMORY:
         temp1.compr += temp0.compr
         temp1.crop += temp0.crop
         temp1.pack += temp0.pack
-        temp.free -= temp0.occu
+        temp1.free -= temp0.occu
 
