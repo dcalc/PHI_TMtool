@@ -93,11 +93,16 @@ def observation(i,phi):
 	return phi
 ####################################################################
 
-st.set_page_config(layout='wide')
+st.set_page_config(page_title='TMtool',
+				   page_icon=':satellite:',layout='wide')
 
 st.title('SO/PHI Telemetry Tool v0.0')
 
 start_date = st.date_input('Insert starting reference date')
+
+start_date = datetime.datetime.combine(start_date, 
+		                  datetime.time(0,0,0))
+
 phi = PHI_MEMORY(start_date)
 
 N = st.number_input("How many observation do you need to run?",min_value=1, step=1)
