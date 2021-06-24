@@ -880,7 +880,7 @@ class PHI_MEMORY:
         insert_values(temp,tm_type,val,key,start,end)
         
         
-    def plot(self,index,history = True, bar = False):#history=True,twin=True,bar=True):
+    def plot(self,index, time_ordered = False, bar = True):#history=True,twin=True,bar=True):
         
         font = {'family':'DejaVu Sans',
                 'weight' : 'normal',
@@ -900,18 +900,22 @@ class PHI_MEMORY:
         
 #         x0 = [temp.history['start'][i] for i in range(len(ty)) if xx[i]]
 #         x1 = [temp.history['end'][i] for i in range(len(ty)) if xx[i]]
-        x0 = temp.history['start']
-        x1 = temp.history['end']
-        y0 = temp.history['occu']
-#         y1 = self.history['occu2']
-        r0 = temp.history['raw']
-#         r1 = self.history['raw2']
-        p0 = temp.history['proc']
-#         p1 = self.history['proc2']
-        c0 = temp.history['cal']
-        m0 = temp.history['compr']
-        o0 = temp.history['crop']
-        k0 = temp.history['pack']
+        if time_ordered:
+            s = np.argsort(temp.history['start'])
+        else:
+            s = np.arange(np.size(temp.history['start']))
+        x0 = np.asarray(temp.history['start'])[s]
+        x1 = np.asarray(temp.history['end'])[s]
+        
+        y0 = np.asarray(temp.history['occu'])[s]
+        r0 = np.asarray(temp.history['raw'])[s]
+        p0 = np.asarray(temp.history['proc'])[s]
+        c0 = np.asarray(temp.history['cal'])[s]
+        m0 = np.asarray(temp.history['compr'])[s]
+        o0 = np.asarray(temp.history['crop'])[s]
+        k0 = np.asarray(temp.history['pack'])[s]
+
+            
 #         c1 = self.history['cal2']
         
 #         fx0 = [temp.history['start'][i] for i in range(len(ty)) if not xx[i]]
@@ -919,117 +923,39 @@ class PHI_MEMORY:
         f0 = temp.history['flush']
 #         f1 = temp.history['flush']
         
-        if history:
-            fig, ax = plt.subplots(figsize=(10,8))
+        fig, ax = plt.subplots(figsize=(10,6))
 
-            a0 = ax.plot(x1, np.cumsum(y0), 'r.-', label = 'partition '+str(index))
-#             ax.plot(x1, np.cumsum(y1), 'r.--', label = 'partition 2')
-
-#             if twin:
-#                 twin1 = ax.twinx()
-#                 twin2 = ax.twinx()
-#                 twin3 = ax.twinx()
-#                 twin4 = ax.twinx()
-
-#                 twin1.spines['left'].set_position(("axes", -.1))
-#                 twin1.yaxis.set_label_position('left')
-#                 twin1.yaxis.set_ticks_position('left')
-
-#                 twin2.spines['left'].set_position(("axes", -.2))
-#                 twin2.yaxis.set_label_position('left')
-#                 twin2.yaxis.set_ticks_position('left')
-
-#                 twin3.spines['left'].set_position(("axes", -.3))
-#                 twin3.yaxis.set_label_position('left')
-#                 twin3.yaxis.set_ticks_position('left')
-#                 twin4.spines['left'].set_position(("axes", -.4))
-#                 twin4.yaxis.set_label_position('left')
-#                 twin4.yaxis.set_ticks_position('left')
-#                 twin1.set_ylabel('Raw data usage (MiByte)')
-#                 twin2.set_ylabel('Processed data usage (MiByte)')
-#                 twin3.set_ylabel('Calibration data usage (MiByte)')
-#                 twin4.set_ylabel('Flush (MiByte)')
-
-#                 a1 = twin1.plot(x1, np.cumsum(r0), 'g*-', label = 'raw 1')
-#                 twin1.plot(x1, np.cumsum(r1), 'g*--', label = 'raw 2')
-#                 a2 = twin2.plot(x1, np.cumsum(p0), 'bv-', label = 'processed 1')
-#                 twin2.plot(x1, np.cumsum(p1), 'bv--', label = 'processed 2')
-#                 a3 = twin3.plot(x1, np.cumsum(c0), 'ms-', label = 'calibration 1')
-#                 twin3.plot(x1, np.cumsum(c1), 'ms--', label = 'calibration 2')
-#                 a4 = twin4.plot(fx1, np.cumsum(f0), 'c^-', alpha=1, label = 'flush 1')
-#                 twin4.plot(fx1, np.cumsum(f1), 'c^--', alpha=1, label = 'flush 2')
-#                 ax.yaxis.label.set_color('red')
-#                 twin1.yaxis.label.set_color('green')
-#                 twin2.yaxis.label.set_color('blue')
-#                 twin3.yaxis.label.set_color('magenta')
-#                 twin4.yaxis.label.set_color('cyan')
-#                 tkw = dict(size=4, width=1.5)
-#                 ax.tick_params(axis='y', colors='red', **tkw)
-#                 twin1.tick_params(axis='y', colors='green', **tkw)
-#                 twin2.tick_params(axis='y', colors='blue', **tkw)
-#                 twin3.tick_params(axis='y', colors='magenta', **tkw)
-#                 twin4.tick_params(axis='y', colors='cyan', **tkw)
-#                 ax.tick_params(axis='x', **tkw)
-#             else:
-            a1 = ax.plot(x1, np.cumsum(r0), 'g*-', label = 'raw')
+        a0 = ax.plot(x1, np.cumsum(y0), 'r.-', label = 'partition '+str(index))
+        a1 = ax.plot(x1, np.cumsum(r0), 'g*-', label = 'raw')
 #                 ax.plot(x1, np.cumsum(r1), 'g*--', label = 'raw 2')
-            a2 = ax.plot(x1, np.cumsum(p0), 'bv-', label = 'processed')
+        a2 = ax.plot(x1, np.cumsum(p0), 'bv-', label = 'processed')
 #                 ax.plot(x1, np.cumsum(p1), 'bv--', label = 'processed 2')
-            a3 = ax.plot(x1, np.cumsum(c0), 'ms-', label = 'calibration')
-            ax.plot(x1, np.cumsum(m0), '<-', color='orange', label = 'compressed')
-            ax.plot(x1, np.cumsum(o0), 'k>-', label = 'cropped')
-            ax.plot(x1, np.cumsum(k0), '+-', color='pink', label = 'packed')
+        a3 = ax.plot(x1, np.cumsum(c0), 'ms-', label = 'calibration')
+        ax.plot(x1, np.cumsum(m0), '<-', color='orange', label = 'compressed')
+        ax.plot(x1, np.cumsum(o0), 'k>-', label = 'cropped')
+        ax.plot(x1, np.cumsum(k0), '+-', color='pink', label = 'packed')
 #                 ax.plot(x1, np.cumsum(c1), 'ms--', label = 'calibration 2')
-            a4 = ax.plot(x1, np.cumsum(f0), 'c^-', alpha=1, label = 'flush')
+        a4 = ax.plot(x1, np.cumsum(f0), 'c^-', alpha=1, label = 'flush')
 #                 ax.plot(fx1, np.cumsum(f1), 'c^--', alpha=1, label = 'flush 2')
-            tkw = dict(size=4, width=1.5)
-            ax.tick_params(axis='y', **tkw)
-            ax.tick_params(axis='x', **tkw)
+        tkw = dict(size=4, width=1.5)
+        ax.tick_params(axis='y', **tkw)
+        ax.tick_params(axis='x', **tkw)
 
-            plt.xlabel('date')
-            ax.set_ylabel('memory usage (MB)')
-            plt.legend()
-            fig.autofmt_xdate()
-        
-            if bar:
-                args = {'width':(x1[-1] - x1[0]).total_seconds()/60/60/24 * 0.04, 'alpha':0.5}
-                ax.bar(x1[-1], temp.raw, color='g', **args)
-                ax.bar(x1[-1], temp.proc, color='b', **args, bottom = temp.raw)
-                ax.bar(x1[-1], temp.cal, color='m', **args, bottom = temp.raw+temp.proc)
+        plt.xlabel('date')
+        ax.set_ylabel('memory usage (MB)')
+        plt.legend()
+        fig.autofmt_xdate()
+    
+        if bar:
+            args = {'width':(x1[-1] - x1[0]).total_seconds()/60/60/24 * 0.04, 'alpha':0.5}
+            ax.bar(x1[-1], temp.raw, color='g', **args)
+            ax.bar(x1[-1], temp.proc, color='b', **args, bottom = temp.raw)
+            ax.bar(x1[-1], temp.cal, color='m', **args, bottom = temp.raw+temp.proc)
 #                 ax.bar(x1[-1], f0[-1], 'c', **args)
-                ax.bar(x1[-1], temp.compr, color='orange', **args, bottom = temp.raw+temp.proc+temp.cal)
-                ax.bar(x1[-1], temp.crop, color='k', **args, bottom = temp.raw+temp.proc+temp.cal+temp.compr)
-                ax.bar(x1[-1], temp.pack, color='pink', **args, bottom = temp.raw+temp.proc+temp.cal+temp.compr+temp.crop)
+            ax.bar(x1[-1], temp.compr, color='orange', **args, bottom = temp.raw+temp.proc+temp.cal)
+            ax.bar(x1[-1], temp.crop, color='k', **args, bottom = temp.raw+temp.proc+temp.cal+temp.compr)
+            ax.bar(x1[-1], temp.pack, color='pink', **args, bottom = temp.raw+temp.proc+temp.cal+temp.compr+temp.crop)
 #                 ax.bar(x1[-1] + (x1[-1]-x1[0])/len(x1), temp.flush, color='c', **args)
-
-#         if bar:
-#             N = 4
-#             t0 = [phi.proc1, 0, phi.proc2, 0]
-#             t1 = [phi.cal1, 0, phi.cal2, 0]
-#             t2 = [phi.raw1, 0, phi.raw2, 0]
-#             f0 = [0, phi.flush1, 0, phi.flush2]
-            
-#             ind = np.arange(N) # the x locations for the groups
-#             width = 0.35
-#             fig, ax = plt.subplots(figsize=(6,8))
-#             ax.set_title(str(phi.history['stop'][-1]))
-            
-#             ax.bar(ind, t0, width, color='b')
-#             b = t0
-#             ax.bar(ind, t1, width, bottom= b, color='m')
-#             b = [t0[0]+t1[0],t0[1]+t1[1],t0[2]+t1[2],t0[3]+t1[3]]
-#             ax.bar(ind, t2, width, bottom= b, color='g')
-#             ax.bar(ind, f0, width, color='c')
-#             ax.set_ylabel('memory usage (MiByte)')
-# #             ax.set_title('Scores by group and gender')
-#             ax.set_xticks(ind)
-#             ax.set_xticklabels(['partition '+str(index), 'raw ', \
-#                                 'processed '+str(index), 'compressed ',\
-#                                 'calibration ', 'flush '])
-#             # ax.set_yticks(np.arange(0, 81, 10))
-            # ax.legend(labels=['Men', 'Women'])
-#             fig.show()
-        
         return fig
         
     def format_partition(self,index,start):
