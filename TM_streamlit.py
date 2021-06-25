@@ -88,7 +88,7 @@ def observation(i,phi):
 			t0 = datetime.datetime.combine(t0d, t0t)
 			st.form_submit_button()
 			
-		kw = a0.compressing(t0, nbits = 6, ndata = -1,level=lev)
+		kw = a0.compressing(t0, nbits = nbits, ndata = -1,level=lev)
 		phi.saving(1,**kw)
 		st.write('Compression end:',a0.compr.end)
 
@@ -161,7 +161,7 @@ def observation(i,phi):
 					t0t_min = t0.time()
 				else:
 					t0t_min = datetime.time(0,0,0)
-				t0t = st.time_input(i+') Insert starting cropping time',t0t_min)
+				t0t = st.time_input(i+') Insert starting packing time',t0t_min)
 				t0 = datetime.datetime.combine(t0d, t0t)
 				st.form_submit_button()
 
@@ -184,7 +184,7 @@ def observation(i,phi):
 				t0 = datetime.datetime.combine(t0d, t0t)
 				st.form_submit_button()
 
-			kw = a0.compressing(t0, nbits = 6, ndata = -1,level=lev)
+			kw = a0.compressing(t0, nbits = nbits, ndata = -1,level=lev)
 			phi.saving(1,**kw)
 			st.write('Compression end:',a0.compr.pack.end)
 
@@ -218,7 +218,7 @@ def observation(i,phi):
 			t0 = datetime.datetime.combine(t0d, t0t)
 			st.form_submit_button()
 			
-		kw = a0.compressing(t0, nbits = 6, ndata = -1,level=lev)
+		kw = a0.compressing(t0, nbits = nbits, ndata = -1,level=lev)
 		phi.saving(1,**kw)
 		st.write('Compression end:',a0.compr.pack.end)
 	

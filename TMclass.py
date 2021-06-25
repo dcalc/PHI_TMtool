@@ -2,6 +2,9 @@ import datetime
 import numpy as np
 import matplotlib.pyplot as plt
 
+def roundup(x,base=8):
+    return round(x) if x % base == 0 else round(x + base - x % base)
+
 class RAW:
     def __call__(self):
         print(f'Variable info: ')
@@ -131,7 +134,7 @@ class PHI_MODE:
         # MB of raw metadata
         self.raw.metadata = 8 * self.raw.n_datasets
         # MB of raw data + metadata
-        self.raw.data = (self.raw.n_pix * self.raw.n_bits * self.raw.n_datasets) / 1e6 / 8 + self.raw.metadata
+        self.raw.data = roundup(self.raw.n_pix * self.raw.n_bits / 8e6) * self.raw.n_datasets + self.raw.metadata
         self.raw.data_tot = self.raw.data
         
 #         self.raw.memory_flag = False
@@ -252,17 +255,15 @@ class PHI_MODE:
             s.crop_y = 1
     
         #MB of intermediate data + metadata
-        s.interm_data_tot += (round(self.raw.X*self.raw.Y*temp.n_outputs/s.crop_x/s.crop_y,0)*\
+        s.interm_data = roundup(round(self.raw.X*self.raw.Y*temp.n_outputs/s.crop_x/s.crop_y,0)*\
                                  s.interm_n_bits / 8e6 + 8) * s.interm_steps * s.this_run
-        s.interm_data = (round(self.raw.X*self.raw.Y*temp.n_outputs/s.crop_x/s.crop_y,0)*\
-                                 s.interm_n_bits / 8e6 + 8) * s.interm_steps * s.this_run
-        
+        s.interm_data_tot += s.interm_data
+
         #MB of processed data + metadata
-        s.data_tot += (round(self.raw.X*self.raw.Y/s.crop_x/s.crop_y,0)*\
-                                 s.n_bits / 8e6 + 8) * s.n_outputs * s.this_run
-        s.data = (round(self.raw.X*self.raw.Y/s.crop_x/s.crop_y,0)*\
-                          s.n_bits / 8e6 + 8) * s.n_outputs * s.this_run
-        
+        s.data = roundup(round(self.raw.X*self.raw.Y/s.crop_x/s.crop_y,0)*\
+                          s.n_bits / 8e6 * s.n_outputs + 8) * s.this_run
+        s.data_tot += s.data
+
         return {'tm_type':type(s), 'val':s.data + s.interm_data,\
                 'key':'proc', 'start':s.start, 'end':s.end}
     
@@ -399,14 +400,16 @@ class PHI_MODE:
             s.crop_y = 1
             
         #MB of compressed data + metadata
-        norm_meta = 1
-        if 'raw' in level:
-            norm_meta = 1/s.n_outputs
-        s.data_tot += (round(self.raw.X*self.raw.Y/s.crop_x/s.crop_y,0)*\
-                                 s.n_bits / 8e6 + 0.1 * norm_meta) * s.n_outputs * s.this_run
-        s.data = (round(self.raw.X*self.raw.Y/s.crop_x/s.crop_y,0)*\
-                                 s.n_bits / 8e6 + 0.1 * norm_meta) * s.n_outputs * s.this_run
         
+        if 'raw' in level:
+            s.data = (round(self.raw.X*self.raw.Y/s.crop_x/s.crop_y,0)*\
+                                 s.n_bits / 8e6 * s.n_outputs + 0.7) * s.this_run
+        else:
+            s.data = (round(self.raw.X*self.raw.Y/s.crop_x/s.crop_y,0)*\
+                                 s.n_bits / 8e6 * s.n_outputs + 0.7) * s.this_run
+        
+        s.data_tot += s.data
+
         return {'tm_type':type(s), 'val':s.data,\
                 'key':'compr', 'start':s.start, 'end':s.end}
     
@@ -524,14 +527,15 @@ class PHI_MODE:
             s.n_bits = 16
         
         #MB of processed data + metadata
-        norm_meta = 1
-        if 'raw' in level:
-            norm_meta = 1/s.n_outputs
-        s.data_tot += (round(self.raw.X*self.raw.Y/s.crop_x/s.crop_y,0)*\
-                                 s.n_bits / 8e6 + 8 * norm_meta) * s.n_outputs * s.this_run
-        s.data = (round(self.raw.X*self.raw.Y/s.crop_x/s.crop_y,0)*\
-                          s.n_bits / 8e6 + 8 * norm_meta) * s.n_outputs * s.this_run
         
+        if 'raw' in level:
+            s.data = roundup(round(self.raw.X*self.raw.Y/s.crop_x/s.crop_y,0)*\
+                                 s.n_bits / 8e6 * s.n_outputs + 8) * s.this_run
+        else:
+            s.data = roundup(round(self.raw.X*self.raw.Y/s.crop_x/s.crop_y,0)*\
+                                 s.n_bits * s.n_outputs / 8e6 + 8)* s.this_run
+        
+        s.data_tot += s.data
         return {'tm_type':type(temp.crop), 'val':s.data,\
                 'key':'crop', 'start':s.start, 'end':s.end}
     
@@ -640,14 +644,15 @@ class PHI_MODE:
             s.crop_y = 1
                 
         #MB of packed data + metadata
-        norm_meta = 1
-        if 'raw' in level:
-            norm_meta = 1/s.n_outputs
-        s.data_tot += (round(self.raw.X*self.raw.Y/s.crop_x/s.crop_y,0)*\
-                                 s.n_bits / 8e6 + 8 * norm_meta) * s.n_outputs * s.this_run
-        s.data = (round(self.raw.X*self.raw.Y/s.crop_x/s.crop_y,0)*\
-                          s.n_bits / 8e6 + 8 * norm_meta) * s.n_outputs * s.this_run
         
+        if 'raw' in level:
+            s.data = roundup(round(self.raw.X*self.raw.Y/s.crop_x/s.crop_y,0)*\
+                                 s.n_bits / 8e6 * s.n_outputs + 8) * s.this_run
+        else:
+            s.data = roundup(round(self.raw.X*self.raw.Y/s.crop_x/s.crop_y,0)*\
+                                 s.n_bits * s.n_outputs / 8e6 + 8) * s.this_run
+        
+        s.data_tot += s.data
         return {'tm_type':type(s), 'val':s.data,\
                 'key':'pack', 'start':s.start, 'end':s.end}
     
@@ -657,55 +662,75 @@ class PHI_MODE:
     #############################################################################
     #############################################################################
     
-    def extract(self,start,level = 'raw'):
+    # def extract(self,start,level = 'raw'):
+    #     self.__checkMode__(['HRT','FDT'])
+    #     if not hasattr(self,'raw'):
+    #         raise ValueError('You must run at least .observation() before extracting! Bye bye.')
+    #     try:
+    #         if not '.' in level:
+    #             new = getattr(self,level)
+
+    #         else:
+    #             level = level.split('.')
+    #             new = self
+    #             for l in level:
+    #                 new = getattr(new,l)
+    #     except:
+    #         raise ValueError(f'The selected level ({level}) is not defined yet')
+        
+    #     new.data = new.data / new.this_run / new.n_outputs
+    #     new.n_datasets = 1
+    #     new.this_run = 1
+    #     new.not_dataset = 0
+    #     new.n_outputs = 1
+    #     new.start = start
+    #     new.cpu_time = datetime.timedelta(minutes=2) #TBD
+    #     new.end = new.start + new.cpu_time * new.this_run
+        
+    #     if type(new) == RAW:
+    #         temp = PHI_MODE('HRT')
+    #         temp.raw = new
+    #     elif type(new) == PROC:
+    #         temp = PHI_MODE('HRT')
+    #         temp.proc = new
+    #     elif type(new) == COMPR:
+    #         temp = PHI_MODE('HRT')
+    #         temp.compr = new
+    #     elif type(new) == CROP:
+    #         temp = PHI_MODE('HRT')
+    #         temp.crop = new
+    #     elif type(new) == PACK:
+    #         temp = PHI_MODE('HRT')
+    #         temp.pack = new
+        
+    #     return (temp, {'tm_type':type(new), 'val':new.data,\
+    #             'key':'proc', 'start':new.start, 'end':new.end})
+    
+    def extract(self,start,nimage = 1, level = 'raw'):
         self.__checkMode__(['HRT','FDT'])
         if not hasattr(self,'raw'):
             raise ValueError('You must run at least .observation() before extracting! Bye bye.')
-#         try:
-#             temp = getattr(self,level)
-#         except:
-#             raise ValueError(f'The selected level ({level}) is not defined yet')
-        
-#         new = PHI_MODE(self.mode)
         try:
             if not '.' in level:
-                new = getattr(self,level)
+                temp = getattr(self,level)
+                lev = level
 
             else:
                 level = level.split('.')
-                new = self
+                temp = self
                 for l in level:
-                    new = getattr(new,l)
+                    temp = getattr(temp,l)
+                lev = level[-1]
         except:
             raise ValueError(f'The selected level ({level}) is not defined yet')
         
-        new.data = new.data / new.this_run / new.n_outputs
-        new.n_datasets = 1
-        new.this_run = 1
-        new.not_dataset = 0
-        new.n_outputs = 1
-        new.start = start
-        new.cpu_time = datetime.timedelta(minutes=2) #TBD
-        new.end = new.start + new.cpu_time * new.this_run
-        
-        if type(new) == RAW:
-            temp = PHI_MODE('HRT')
-            temp.raw = new
-        elif type(new) == PROC:
-            temp = PHI_MODE('HRT')
-            temp.proc = new
-        elif type(new) == COMPR:
-            temp = PHI_MODE('HRT')
-            temp.compr = new
-        elif type(new) == CROP:
-            temp = PHI_MODE('HRT')
-            temp.crop = new
-        elif type(new) == PACK:
-            temp = PHI_MODE('HRT')
-            temp.pack = new
-        
-        return (temp, {'tm_type':type(new), 'val':new.data,\
-                'key':'proc', 'start':new.start, 'end':new.end})
+        temp.start = start
+        temp.end = temp.start + datetime.timedelta(minutes=.5) * nimage #TBD
+        temp.data += 8 * nimage
+        temp.data_tot += temp.data
+
+        return {'tm_type':type(temp), 'val':temp.data,\
+                'key':lev, 'start':temp.start, 'end':temp.end}
     
     #############################################################################
     #############################################################################
@@ -737,8 +762,8 @@ class PHI_MODE:
         
         if insert == 'n_datasets':
             n_datasets = data_vol
-            data_vol = 2048*2048*24*32/8e6 *(32+16+6)/32 * n_datasets
-            compr_vol = 2048*2048*24*6/8e6 * n_datasets
+            data_vol = roundup(2048*2048*24*32/8e6 *(32+16+6)/32) * n_datasets
+            compr_vol = roundup(2048*2048*24*6/8e6) * n_datasets
             self.cal.data = data_vol #MB
             return ({'tm_type':type(self.cal), 'val':self.cal.data-compr_vol,\
                 'key':'cal', 'start':self.cal.start, 'end':self.cal.end},
@@ -846,13 +871,13 @@ class PHI_MEMORY:
                 elif k == key:
                     d[k] += [val]
                 elif k == 'occu':
-                    if not key in 'flush':
+                    if not key in ['flush','compr']:
                         d[k] += [val]
                     else:
                         d[k] += [0]
                 else:
                     d[k] += [0]
-            if not key in 'flush':
+            if not key in ['flush','compr']:
                 D.occu += val
                 D.free -= val
             if key == 'raw':
