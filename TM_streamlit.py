@@ -2,7 +2,7 @@ import streamlit as st
 from TMclass import *
 import numpy as np
 import datetime
-import pandas as pd
+# import pandas as pd
 
 def observation(i,phi):
 	i = str(i)
@@ -225,7 +225,7 @@ def observation(i,phi):
 	st.write('Total amount of compressed data + metadata:',round(phi.part1.compr,1), 'MB')
 	st.write('number of datasets for this run:',a0.raw.n_datasets)
 
-	df = pd.DataFrame.from_dict(phi.part1.history)
+	# df = pd.DataFrame.from_dict(phi.part1.history)
 
 	return phi
 ####################################################################
