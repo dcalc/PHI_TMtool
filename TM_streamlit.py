@@ -48,52 +48,183 @@ def observation(i,phi):
 		st.form_submit_button()
 	
 	kw = a0.observation(start,end,cadence=cad,shape=(y,x,p,wl))
+	lev = 'raw'
 	phi.saving(1,**kw)
 	t0 = a0.raw.end
 	
-	crop = st.checkbox(i+') Crop?')
-	pack = st.checkbox(i+')Pack?')
-	if crop:
-		c = [1,1]
-		c[0] = st.number_input(i+") Insert Crop along y axis",min_value=1.0)
-		c[1] = st.number_input(i+") Insert Crop along x axis",min_value=1.0)
-		kw = a0.cropping(t0,ndata=-1,crop=c,level='raw')
+	option = st.selectbox(
+    i+') Do you want to process, crop or pack your dataset?',
+    ('Processing', 'Cropping', 'Packing'))
+
+	if option == 'Processing':
+		with st.form(i+') Processing'):
+			nout = st.number_input(i+") Insert number of processing outputs",min_value=3, max_value=5, value=5, step=1,\
+							help='5 outputs: (Ic,VLoS,Bvec);\n3 outputs: (Ic,VLoS,BLoS)')
+			t0d = st.date_input(i+') Insert starting processing date',min_value = t0.date())
+			if t0d == t0.date():
+				t0t_min = t0.time()
+			else:
+				t0t_min = datetime.time(0,0,0)
+			t0t = st.time_input(i+') Insert starting processing time',t0t_min)
+			t0 = datetime.datetime.combine(t0d, t0t)
+			st.form_submit_button()
+
+		kw = a0.processing(t0,ndata=-1,nout=nout,partialStore=0x00,level=lev)
+		phi.saving(1,**kw)
+		t0 = a0.proc.end
+		st.write('Processing end:',t0)
+		lev = 'proc'
+
+		st.write(i+') The processed file will be compressed')
+
+		with st.form(i+') Compressing'):
+			nbits = st.selectbox(i+") Select number of bits",(2,3,4,5,6,16))
+			t0d = st.date_input(i+') Insert starting compressing date',min_value = t0.date())
+			if t0d == t0.date():
+				t0t_min = t0.time()
+			else:
+				t0t_min = datetime.time(0,0,0)
+			t0t = st.time_input(i+') Insert starting compressing time',t0t_min)
+			t0 = datetime.datetime.combine(t0d, t0t)
+			st.form_submit_button()
+			
+		kw = a0.compressing(t0, nbits = 6, ndata = -1,level=lev)
+		phi.saving(1,**kw)
+		st.write('Compression end:',a0.compr.end)
+
+	if option == 'Cropping':
+		with st.form(i+') Cropping'):
+			c = [1,1]
+			c[0] = st.number_input(i+") Insert Crop along y axis",min_value=1.0)
+			c[1] = st.number_input(i+") Insert Crop along x axis",min_value=1.0)
+		
+			t0d = st.date_input(i+') Insert starting cropping date',min_value = t0.date())
+			if t0d == t0.date():
+				t0t_min = t0.time()
+			else:
+				t0t_min = datetime.time(0,0,0)
+			t0t = st.time_input(i+') Insert starting cropping time',t0t_min)
+			t0 = datetime.datetime.combine(t0d, t0t)
+			st.form_submit_button()
+
+		kw = a0.cropping(t0,ndata=-1,crop=c,level=lev)
 		phi.saving(1,**kw)
 		t0 = a0.raw.crop.end
-		if pack:
-			kw = a0.packing(t0,ndata=-1,level='raw.crop')
-			phi.saving(1,**kw)
-			t0 = a0.raw.pack.end
-			lev = 'raw.pack'
-		else:
-			nout = st.number_input(i+") Insert number of processing outputs",min_value=3, max_value=5, value=5, step=1,\
-						help='5 outputs: (Ic,VLoS,Bvec);\n3 outputs: (Ic,VLoS,BLoS)')
-			kw = a0.processing(t0,ndata=-1,nout=nout,partialStore=0x00,level='raw.crop')
+		lev = 'raw.crop'
+		st.write('Cropping end:',t0)
+
+		option_2 = st.selectbox(
+		i+') Do you want to process or pack your dataset?',
+		('Processing', 'Packing'))
+
+
+		if option_2 == 'Processing':
+			with st.form(i+') Processing'):
+				nout = st.number_input(i+") Insert number of processing outputs",min_value=3, max_value=5, value=5, step=1,\
+								help='5 outputs: (Ic,VLoS,Bvec);\n3 outputs: (Ic,VLoS,BLoS)')
+				t0d = st.date_input(i+') Insert starting processing date',min_value = t0.date())
+				if t0d == t0.date():
+					t0t_min = t0.time()
+				else:
+					t0t_min = datetime.time(0,0,0)
+				t0t = st.time_input(i+') Insert starting processing time',t0t_min)
+				t0 = datetime.datetime.combine(t0d, t0t)
+				st.form_submit_button()
+			
+			kw = a0.processing(t0,ndata=-1,nout=nout,partialStore=0x00,level=lev)
 			phi.saving(1,**kw)
 			t0 = a0.proc.crop.end
 			lev = 'proc.crop'
-	else:
-		if pack:
-			kw = a0.packing(t0,ndata=-1,level='raw')
+			st.write('Processing end:',t0)
+
+			st.write(i+') The cropped + processed data will be compressed')
+			
+			with st.form(i+') Compressing'):
+				nbits = st.selectbox(i+") Select number of bits",(2,3,4,5,6,16),index=4)
+				t0d = st.date_input(i+') Insert starting compressing date',min_value = t0.date())
+				if t0d == t0.date():
+					t0t_min = t0.time()
+				else:
+					t0t_min = datetime.time(0,0,0)
+				t0t = st.time_input(i+') Insert starting compressing time',t0t_min)
+				t0 = datetime.datetime.combine(t0d, t0t)
+				st.form_submit_button()
+
+			kw = a0.compressing(t0, nbits = nbits, ndata = -1,level=lev)
+			phi.saving(1,**kw)
+			st.write('Compression end:',a0.compr.crop.end)
+
+		if option_2 == 'Packing':
+			with st.form(i+') Packing'):
+				t0d = st.date_input(i+') Insert starting packing date',min_value = t0.date())
+				if t0d == t0.date():
+					t0t_min = t0.time()
+				else:
+					t0t_min = datetime.time(0,0,0)
+				t0t = st.time_input(i+') Insert starting cropping time',t0t_min)
+				t0 = datetime.datetime.combine(t0d, t0t)
+				st.form_submit_button()
+
+			kw = a0.packing(t0,ndata=-1,level=lev)
 			phi.saving(1,**kw)
 			t0 = a0.raw.pack.end
 			lev = 'raw.pack'
-		else:
-			nout = st.number_input(i+") Insert number of processing outputs",min_value=3, max_value=5, value=5, step=1,\
-						help='5 outputs: (Ic,VLoS,Bvec);\n3 outputs: (Ic,VLoS,BLoS)')
-			kw = a0.processing(t0,ndata=-1,nout=nout,partialStore=0x00,level='raw')
-			phi.saving(1,**kw)
-			t0 = a0.proc.end
-			lev = 'proc'
-		
-	kw = a0.compressing(t0, nbits = 6, ndata = -1,level=lev)
-	phi.saving(1,**kw)
+			st.write('Packing end:',t0)
 
+			st.write(i+') The cropped + packed data will be compressed')
+
+			with st.form(i+') Compressing'):
+				nbits = st.selectbox(i+") Select number of bits",(2,3,4,5,6,16),index=4)
+				t0d = st.date_input(i+') Insert starting compressing date',min_value = t0.date())
+				if t0d == t0.date():
+					t0t_min = t0.time()
+				else:
+					t0t_min = datetime.time(0,0,0)
+				t0t = st.time_input(i+') Insert starting compressing time',t0t_min)
+				t0 = datetime.datetime.combine(t0d, t0t)
+				st.form_submit_button()
+
+			kw = a0.compressing(t0, nbits = 6, ndata = -1,level=lev)
+			phi.saving(1,**kw)
+			st.write('Compression end:',a0.compr.pack.end)
+
+	if option == 'Packing':
+		with st.form(i+') Packing'):
+			t0d = st.date_input(i+') Insert starting packing date',min_value = t0.date())
+			if t0d == t0.date():
+				t0t_min = t0.time()
+			else:
+				t0t_min = datetime.time(0,0,0)
+			t0t = st.time_input(i+') Insert starting cropping time',t0t_min)
+			t0 = datetime.datetime.combine(t0d, t0t)
+			st.form_submit_button()
+
+		kw = a0.packing(t0,ndata=-1,level=lev)
+		phi.saving(1,**kw)
+		t0 = a0.raw.pack.end
+		lev = 'raw.pack'
+		st.write('Packing end:',t0)
+
+		st.write(i+') The cropped + packed data will be compressed')
+
+		with st.form(i+') Compressing'):
+			nbits = st.selectbox(i+") Select number of bits",(2,3,4,5,6,16),index=4)
+			t0d = st.date_input(i+') Insert starting compressing date',min_value = t0.date())
+			if t0d == t0.date():
+				t0t_min = t0.time()
+			else:
+				t0t_min = datetime.time(0,0,0)
+			t0t = st.time_input(i+') Insert starting compressing time',t0t_min)
+			t0 = datetime.datetime.combine(t0d, t0t)
+			st.form_submit_button()
+			
+		kw = a0.compressing(t0, nbits = 6, ndata = -1,level=lev)
+		phi.saving(1,**kw)
+		st.write('Compression end:',a0.compr.pack.end)
+	
 	st.write('Total amount of compressed data + metadata:',round(phi.part1.compr,1), 'MB')
 	st.write('number of datasets for this run:',a0.raw.n_datasets)
 
-	#phi.plot(1,bar=True)
-	
 	df = pd.DataFrame.from_dict(phi.part1.history)
 
 	return phi
@@ -102,7 +233,7 @@ def observation(i,phi):
 st.set_page_config(page_title='TMtool',
 				   page_icon=':satellite:',layout='wide')
 
-st.title('SO/PHI Telemetry Tool v0.5')
+st.title('SO/PHI Telemetry Tool v1.0')
 
 start_date = st.sidebar.date_input('Insert starting reference date')
 
