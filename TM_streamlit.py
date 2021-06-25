@@ -124,6 +124,6 @@ for i,ci in enumerate(c):
 # with clast:
 #st.write("Plot!")
 #st.line_chart(df)
-time_ordered = st.sidebar.checkbox('Time ordered plot?')
-fig = phi.plot(1,time_ordered = time_ordered, bar=True)
+time_order = st.sidebar.checkbox('Plot in temporal order?')
+fig = phi.plot(1,time_ordered = time_order, bar=True)
 st.pyplot(fig)
