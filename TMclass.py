@@ -134,12 +134,12 @@ class PHI_MODE:
         # MB of raw metadata
         self.raw.metadata = 8 * self.raw.n_datasets
         # MB of raw data + metadata
-        self.raw.data = roundup(self.raw.n_pix * self.raw.n_bits / 8e6) * self.raw.n_datasets + self.raw.metadata
-        self.raw.data_tot = self.raw.data
+        self.raw.data = roundup(self.raw.n_pix * self.raw.n_bits / 8e6) * self.raw.n_datasets #+ self.raw.metadata
+        self.raw.data_tot = self.raw.data + self.raw.metadata
         
 #         self.raw.memory_flag = False
         
-        return {'tm_type':type(self.raw), 'val':self.raw.data,\
+        return {'tm_type':type(self.raw), 'val':self.raw.data_tot,\
                 'key':'raw', 'start':self.raw.start, 'end':self.raw.end}
     
     #############################################################################
@@ -255,16 +255,18 @@ class PHI_MODE:
             s.crop_y = 1
     
         #MB of intermediate data + metadata
+        s.interm_metadata = 8 * s.interm_steps * s.this_run
         s.interm_data = roundup(round(self.raw.X*self.raw.Y*temp.n_outputs/s.crop_x/s.crop_y,0)*\
-                                 s.interm_n_bits / 8e6 + 8) * s.interm_steps * s.this_run
-        s.interm_data_tot += s.interm_data
+                                 s.interm_n_bits / 8e6) * s.interm_steps * s.this_run
+        s.interm_data_tot += s.interm_data + s.interm_metadata
 
         #MB of processed data + metadata
+        s.metadata = 8 * s.this_run
         s.data = roundup(round(self.raw.X*self.raw.Y/s.crop_x/s.crop_y,0)*\
-                          s.n_bits / 8e6 * s.n_outputs + 8) * s.this_run
-        s.data_tot += s.data
+                          s.n_bits / 8e6 * s.n_outputs) * s.this_run
+        s.data_tot += s.data + s.metadata
 
-        return {'tm_type':type(s), 'val':s.data + s.interm_data,\
+        return {'tm_type':type(s), 'val':s.data + s.metadata + s.interm_data + s.interm_metadata,\
                 'key':'proc', 'start':s.start, 'end':s.end}
     
     
@@ -303,7 +305,7 @@ class PHI_MODE:
                         s = self.compr.crop
                         s.n_datasets = 0
                         s.not_datasets = temp.n_datasets
-                        s.cpu_time = datetime.timedelta(minutes=33) #TBD
+                        s.cpu_time = datetime.timedelta(minutes=1) #TBD
                         s.data_tot = 0
                         s.n_datasets = 0
                         
@@ -315,7 +317,7 @@ class PHI_MODE:
                         s = self.compr.pack
                         s.n_datasets = 0
                         s.not_datasets = temp.n_datasets
-                        s.cpu_time = datetime.timedelta(minutes=33) #TBD
+                        s.cpu_time = datetime.timedelta(minutes=1) #TBD
                         s.data_tot = 0
                         s.n_datasets = 0
                 else:
@@ -367,7 +369,7 @@ class PHI_MODE:
             
             s.start = start
             s.n_outputs = temp.n_outputs
-            s.cpu_time = datetime.timedelta(minutes=33) #TBD
+            s.cpu_time = datetime.timedelta(minutes=1) #TBD
             s.data_tot = 0
             s.n_datasets = 0
             if ndata == -1:
@@ -497,7 +499,7 @@ class PHI_MODE:
             s.start = start
             s.crop_x = crop_x
             s.crop_y = crop_y
-            s.cpu_time = datetime.timedelta(minutes=20) #TBD
+            s.cpu_time = datetime.timedelta(minutes=1) #TBD
             s.n_outputs = temp.n_outputs
             s.data_tot = 0
             s.n_datasets = 0
@@ -529,14 +531,16 @@ class PHI_MODE:
         #MB of processed data + metadata
         
         if 'raw' in level:
+            s.metadata = 8 * s.this_run
             s.data = roundup(round(self.raw.X*self.raw.Y/s.crop_x/s.crop_y,0)*\
-                                 s.n_bits / 8e6 * s.n_outputs + 8) * s.this_run
+                                 s.n_bits / 8e6 * s.n_outputs) * s.this_run
         else:
+            s.metadata = 8 * s.this_run
             s.data = roundup(round(self.raw.X*self.raw.Y/s.crop_x/s.crop_y,0)*\
-                                 s.n_bits * s.n_outputs / 8e6 + 8)* s.this_run
+                                 s.n_bits * s.n_outputs / 8e6)* s.this_run
         
-        s.data_tot += s.data
-        return {'tm_type':type(temp.crop), 'val':s.data,\
+        s.data_tot += s.data + s.metadata
+        return {'tm_type':type(temp.crop), 'val':s.data + s.metadata,\
                 'key':'crop', 'start':s.start, 'end':s.end}
     
     
@@ -610,7 +614,7 @@ class PHI_MODE:
             s.level = level
             s.start = start
             s.n_bits = 16
-            s.cpu_time = datetime.timedelta(minutes=20) #TBD
+            s.cpu_time = datetime.timedelta(minutes=1) #TBD
             s.n_outputs = temp.n_outputs
             s.data_tot = 0
             s.n_datasets = 0
@@ -646,14 +650,16 @@ class PHI_MODE:
         #MB of packed data + metadata
         
         if 'raw' in level:
+            s.metadata = 8 * s.this_run
             s.data = roundup(round(self.raw.X*self.raw.Y/s.crop_x/s.crop_y,0)*\
-                                 s.n_bits / 8e6 * s.n_outputs + 8) * s.this_run
+                                 s.n_bits / 8e6 * s.n_outputs) * s.this_run
         else:
+            s.metadata = 8 * s.this_run
             s.data = roundup(round(self.raw.X*self.raw.Y/s.crop_x/s.crop_y,0)*\
-                                 s.n_bits * s.n_outputs / 8e6 + 8) * s.this_run
+                                 s.n_bits * s.n_outputs / 8e6) * s.this_run
         
-        s.data_tot += s.data
-        return {'tm_type':type(s), 'val':s.data,\
+        s.data_tot += s.data + s.metadata
+        return {'tm_type':type(s), 'val':s.data + s.metadata,\
                 'key':'pack', 'start':s.start, 'end':s.end}
     
     
@@ -726,10 +732,9 @@ class PHI_MODE:
         
         temp.start = start
         temp.end = temp.start + datetime.timedelta(minutes=.5) * nimage #TBD
-        temp.data += 8 * nimage
-        temp.data_tot += temp.data
-
-        return {'tm_type':type(temp), 'val':temp.data,\
+        temp.metadata = 8 * nimage
+        temp.data_tot += temp.metadata
+        return {'tm_type':type(temp), 'val':temp.metadata,\
                 'key':lev, 'start':temp.start, 'end':temp.end}
     
     #############################################################################
