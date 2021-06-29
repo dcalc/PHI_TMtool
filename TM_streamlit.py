@@ -63,7 +63,7 @@ def observation(i,phi):
 		with st.form(i+') Processing'):
 			nout = st.number_input(i+") Insert number of processing outputs",min_value=3, max_value=5, value=5, step=1,\
 							help='5 outputs: (Ic,VLoS,Bvec);\n3 outputs: (Ic,VLoS,BLoS)')
-			t0d = st.date_input(i+') Insert starting processing date',value=t0.date,min_value = t0.date())
+			t0d = st.date_input(i+') Insert starting processing date',value=t0.date(),min_value = t0.date())
 			if t0d == t0.date():
 				t0t_min = t0.time()
 			else:
@@ -82,7 +82,7 @@ def observation(i,phi):
 
 		with st.form(i+') Compressing'):
 			nbits = st.selectbox(i+") Select number of bits",(2,3,4,5,6,16))
-			t0d = st.date_input(i+') Insert starting compressing date',value=t0.date,min_value = t0.date())
+			t0d = st.date_input(i+') Insert starting compressing date',value=t0.date(),min_value = t0.date())
 			if t0d == t0.date():
 				t0t_min = t0.time()
 			else:
@@ -101,7 +101,7 @@ def observation(i,phi):
 			c[0] = st.number_input(i+") Insert Crop along y axis",min_value=0,max_value=y)
 			c[1] = st.number_input(i+") Insert Crop along x axis",min_value=0,max_value=x)
 		
-			t0d = st.date_input(i+') Insert starting cropping date',value=t0.date,min_value = t0.date())
+			t0d = st.date_input(i+') Insert starting cropping date',value=t0.date(),min_value = t0.date())
 			if t0d == t0.date():
 				t0t_min = t0.time()
 			else:
@@ -125,7 +125,7 @@ def observation(i,phi):
 			with st.form(i+') Processing'):
 				nout = st.number_input(i+") Insert number of processing outputs",min_value=3, max_value=5, value=5, step=1,\
 								help='5 outputs: (Ic,VLoS,Bvec);\n3 outputs: (Ic,VLoS,BLoS)')
-				t0d = st.date_input(i+') Insert starting processing date',value=t0.date,min_value = t0.date())
+				t0d = st.date_input(i+') Insert starting processing date',value=t0.date(),min_value = t0.date())
 				if t0d == t0.date():
 					t0t_min = t0.time()
 				else:
@@ -144,7 +144,7 @@ def observation(i,phi):
 			
 			with st.form(i+') Compressing'):
 				nbits = st.selectbox(i+") Select number of bits",(2,3,4,5,6,16),index=4)
-				t0d = st.date_input(i+') Insert starting compressing date',value=t0.date,min_value = t0.date())
+				t0d = st.date_input(i+') Insert starting compressing date',value=t0.date(),min_value = t0.date())
 				if t0d == t0.date():
 					t0t_min = t0.time()
 				else:
@@ -159,7 +159,7 @@ def observation(i,phi):
 
 		if option_2 == 'Packing':
 			with st.form(i+') Packing'):
-				t0d = st.date_input(i+') Insert starting packing date',value=t0.date,min_value = t0.date())
+				t0d = st.date_input(i+') Insert starting packing date',value=t0.date(),min_value = t0.date())
 				if t0d == t0.date():
 					t0t_min = t0.time()
 				else:
@@ -178,7 +178,7 @@ def observation(i,phi):
 
 			with st.form(i+') Compressing'):
 				nbits = st.selectbox(i+") Select number of bits",(2,3,4,5,6,16),index=4)
-				t0d = st.date_input(i+') Insert starting compressing date',value=t0.date,min_value = t0.date())
+				t0d = st.date_input(i+') Insert starting compressing date',value=t0.date(),min_value = t0.date())
 				if t0d == t0.date():
 					t0t_min = t0.time()
 				else:
@@ -193,7 +193,7 @@ def observation(i,phi):
 
 	if option == 'Packing':
 		with st.form(i+') Packing'):
-			t0d = st.date_input(i+') Insert starting packing date',value=t0.date,min_value = t0.date())
+			t0d = st.date_input(i+') Insert starting packing date',value=t0.date(),min_value = t0.date())
 			if t0d == t0.date():
 				t0t_min = t0.time()
 			else:
@@ -212,7 +212,7 @@ def observation(i,phi):
 
 		with st.form(i+') Compressing'):
 			nbits = st.selectbox(i+") Select number of bits",(2,3,4,5,6,16),index=4)
-			t0d = st.date_input(i+') Insert starting compressing date',value=t0.date,min_value = t0.date())
+			t0d = st.date_input(i+') Insert starting compressing date',value=t0.date(),min_value = t0.date())
 			if t0d == t0.date():
 				t0t_min = t0.time()
 			else:
