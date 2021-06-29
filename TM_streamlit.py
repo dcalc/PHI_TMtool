@@ -8,10 +8,13 @@ def observation(i,phi):
 	i = str(i)
 	mode = st.selectbox(
 	     i+') Select Observation Mode',
-	     ('FDT', 'HRT', 'CAL', 'FLUSH'))
+	     ('FDT', 'HRT'))
+	index = st.selectbox(
+	     i+') Select partition',
+	     (1,2))
 
 	with st.form(i+') Time'):
-		start_date = st.date_input(i+') Insert starting date')
+		start_date = st.date_input(i+') Insert starting date',value=datetime.date(2022,1,1))
 
 		start_time = st.time_input(i+')Insert starting time',datetime.time(0,0,0))
 
@@ -41,7 +44,7 @@ def observation(i,phi):
 	a0 = PHI_MODE(mode)
 
 	with st.form(i+') Shape'):
-		y = st.number_input(i+") Y axis",min_value=1, max_value=2048,value=2048)
+		y = st.number_input(i+") Y axis",min_value=2048, max_value=2048,value=2048)
 		x = st.number_input(i+") X axis",min_value=1, max_value=2048,value=2048)
 		p = st.number_input(i+") P axis",min_value=1, max_value=4,value=4)
 		wl = st.number_input(i+") L axis",min_value=1, max_value=6,value=6)
@@ -49,7 +52,7 @@ def observation(i,phi):
 	
 	kw = a0.observation(start,end,cadence=cad,shape=(y,x,p,wl))
 	lev = 'raw'
-	phi.saving(1,**kw)
+	phi.saving(index,**kw)
 	t0 = a0.raw.end
 	
 	option = st.selectbox(
@@ -70,7 +73,7 @@ def observation(i,phi):
 			st.form_submit_button()
 
 		kw = a0.processing(t0,ndata=-1,nout=nout,partialStore=0x00,level=lev)
-		phi.saving(1,**kw)
+		phi.saving(index,**kw)
 		t0 = a0.proc.end
 		st.write('Processing end:',t0)
 		lev = 'proc'
@@ -89,14 +92,14 @@ def observation(i,phi):
 			st.form_submit_button()
 			
 		kw = a0.compressing(t0, nbits = nbits, ndata = -1,level=lev)
-		phi.saving(1,**kw)
+		phi.saving(index,**kw)
 		st.write('Compression end:',a0.compr.end)
 
 	if option == 'Cropping':
 		with st.form(i+') Cropping'):
 			c = [1,1]
-			c[0] = st.number_input(i+") Insert Crop along y axis",min_value=1.0)
-			c[1] = st.number_input(i+") Insert Crop along x axis",min_value=1.0)
+			c[0] = st.number_input(i+") Insert Crop along y axis",min_value=0,max_value=y)
+			c[1] = st.number_input(i+") Insert Crop along x axis",min_value=0,max_value=x)
 		
 			t0d = st.date_input(i+') Insert starting cropping date',min_value = t0.date())
 			if t0d == t0.date():
@@ -108,7 +111,7 @@ def observation(i,phi):
 			st.form_submit_button()
 
 		kw = a0.cropping(t0,ndata=-1,crop=c,level=lev)
-		phi.saving(1,**kw)
+		phi.saving(index,**kw)
 		t0 = a0.raw.crop.end
 		lev = 'raw.crop'
 		st.write('Cropping end:',t0)
@@ -132,7 +135,7 @@ def observation(i,phi):
 				st.form_submit_button()
 			
 			kw = a0.processing(t0,ndata=-1,nout=nout,partialStore=0x00,level=lev)
-			phi.saving(1,**kw)
+			phi.saving(index,**kw)
 			t0 = a0.proc.crop.end
 			lev = 'proc.crop'
 			st.write('Processing end:',t0)
@@ -151,7 +154,7 @@ def observation(i,phi):
 				st.form_submit_button()
 
 			kw = a0.compressing(t0, nbits = nbits, ndata = -1,level=lev)
-			phi.saving(1,**kw)
+			phi.saving(index,**kw)
 			st.write('Compression end:',a0.compr.crop.end)
 
 		if option_2 == 'Packing':
@@ -166,7 +169,7 @@ def observation(i,phi):
 				st.form_submit_button()
 
 			kw = a0.packing(t0,ndata=-1,level=lev)
-			phi.saving(1,**kw)
+			phi.saving(index,**kw)
 			t0 = a0.raw.pack.end
 			lev = 'raw.pack'
 			st.write('Packing end:',t0)
@@ -185,7 +188,7 @@ def observation(i,phi):
 				st.form_submit_button()
 
 			kw = a0.compressing(t0, nbits = nbits, ndata = -1,level=lev)
-			phi.saving(1,**kw)
+			phi.saving(index,**kw)
 			st.write('Compression end:',a0.compr.pack.end)
 
 	if option == 'Packing':
@@ -200,7 +203,7 @@ def observation(i,phi):
 			st.form_submit_button()
 
 		kw = a0.packing(t0,ndata=-1,level=lev)
-		phi.saving(1,**kw)
+		phi.saving(index,**kw)
 		t0 = a0.raw.pack.end
 		lev = 'raw.pack'
 		st.write('Packing end:',t0)
@@ -219,12 +222,13 @@ def observation(i,phi):
 			st.form_submit_button()
 			
 		kw = a0.compressing(t0, nbits = nbits, ndata = -1,level=lev)
-		phi.saving(1,**kw)
+		phi.saving(index,**kw)
 		st.write('Compression end:',a0.compr.pack.end)
 	
-	st.write('Total amount of compressed data + metadata:',round(phi.part1.compr,1), 'MB')
-	st.write('number of datasets for this run:',a0.raw.n_datasets)
+	# st.write('Total amount of compressed data + metadata:',round(phi.part1.compr,1), 'MB')
+	# st.write('number of datasets for this run:',a0.raw.n_datasets)
 
+	printp(a0,gui=True)
 	# df = pd.DataFrame.from_dict(phi.part1.history)
 
 	return phi
@@ -255,6 +259,8 @@ for i,ci in enumerate(c):
 # with clast:
 #st.write("Plot!")
 #st.line_chart(df)
-time_order = st.sidebar.checkbox('Plot in temporal order?')
-fig = phi.plot(1,time_ordered = time_order, bar=True)
-st.pyplot(fig)
+# time_order = st.sidebar.checkbox('Plot in temporal order?')
+# fig = phi.plot(1,time_ordered = time_order, bar=True)
+# st.pyplot(fig)
+ymax = st.sidebar.slider('y axis maximum',0,500,250,step=5)
+st.pyplot(plot_tot(phi,ylim=(0,ymax),fig=True))

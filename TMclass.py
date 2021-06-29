@@ -251,18 +251,18 @@ class PHI_MODE:
             s.crop_x = temp.crop_x
             s.crop_y = temp.crop_y
         except:
-            s.crop_x = 1
-            s.crop_y = 1
+            s.crop_x = self.raw.X
+            s.crop_y = self.raw.Y
     
         #MB of intermediate data + metadata
         s.interm_metadata = 8 * s.interm_steps * s.this_run
-        s.interm_data = roundup(round(self.raw.X*self.raw.Y*temp.n_outputs/s.crop_x/s.crop_y,0)*\
+        s.interm_data = roundup(round(temp.n_outputs*s.crop_x*s.crop_y,0)*\
                                  s.interm_n_bits / 8e6) * s.interm_steps * s.this_run
         s.interm_data_tot += s.interm_data + s.interm_metadata
 
         #MB of processed data + metadata
         s.metadata = 8 * s.this_run
-        s.data = roundup(round(self.raw.X*self.raw.Y/s.crop_x/s.crop_y,0)*\
+        s.data = roundup(round(s.crop_x*s.crop_y,0)*\
                           s.n_bits / 8e6 * s.n_outputs) * s.this_run
         s.data_tot += s.data + s.metadata
 
@@ -398,16 +398,16 @@ class PHI_MODE:
             s.crop_y = temp.crop_y
             
         else:
-            s.crop_x = 1
-            s.crop_y = 1
+            s.crop_x = self.raw.X
+            s.crop_y = self.raw.Y
             
         #MB of compressed data + metadata
         
         if 'raw' in level:
-            s.data = (round(self.raw.X*self.raw.Y/s.crop_x/s.crop_y,0)*\
+            s.data = (round(s.crop_x*s.crop_y,0)*\
                                  s.n_bits / 8e6 * s.n_outputs + 0.7) * s.this_run
         else:
-            s.data = (round(self.raw.X*self.raw.Y/s.crop_x/s.crop_y,0)*\
+            s.data = (round(s.crop_x*s.crop_y,0)*\
                                  s.n_bits / 8e6 * s.n_outputs + 0.7) * s.this_run
         
         s.data_tot += s.data
@@ -532,11 +532,11 @@ class PHI_MODE:
         
         if 'raw' in level:
             s.metadata = 8 * s.this_run
-            s.data = roundup(round(self.raw.X*self.raw.Y/s.crop_x/s.crop_y,0)*\
+            s.data = roundup(round(s.crop_x*s.crop_y,0)*\
                                  s.n_bits / 8e6 * s.n_outputs) * s.this_run
         else:
             s.metadata = 8 * s.this_run
-            s.data = roundup(round(self.raw.X*self.raw.Y/s.crop_x/s.crop_y,0)*\
+            s.data = roundup(round(s.crop_x*s.crop_y,0)*\
                                  s.n_bits * s.n_outputs / 8e6)* s.this_run
         
         s.data_tot += s.data + s.metadata
@@ -644,18 +644,18 @@ class PHI_MODE:
             s.crop_y = temp.crop_y
             
         else:
-            s.crop_x = 1
-            s.crop_y = 1
+            s.crop_x = self.raw.X
+            s.crop_y = self.raw.Y
                 
         #MB of packed data + metadata
         
         if 'raw' in level:
             s.metadata = 8 * s.this_run
-            s.data = roundup(round(self.raw.X*self.raw.Y/s.crop_x/s.crop_y,0)*\
+            s.data = roundup(round(s.crop_x*s.crop_y,0)*\
                                  s.n_bits / 8e6 * s.n_outputs) * s.this_run
         else:
             s.metadata = 8 * s.this_run
-            s.data = roundup(round(self.raw.X*self.raw.Y/s.crop_x/s.crop_y,0)*\
+            s.data = roundup(round(s.crop_x*s.crop_y,0)*\
                                  s.n_bits * s.n_outputs / 8e6) * s.this_run
         
         s.data_tot += s.data + s.metadata
@@ -767,10 +767,11 @@ class PHI_MODE:
         
         if insert == 'n_datasets':
             n_datasets = data_vol
-            data_vol = roundup(2048*2048*24*32/8e6 *(32+16+6)/32) * n_datasets
-            compr_vol = roundup(2048*2048*24*6/8e6) * n_datasets
+            data_vol = roundup(2048*2048*24*32/8e6 *(32+16)/32) * n_datasets
+            compr_vol = (2048*2048*24*6/8e6 + 0.7) * n_datasets
             self.cal.data = data_vol #MB
-            return ({'tm_type':type(self.cal), 'val':self.cal.data-compr_vol,\
+            self.cal.metadata = 8 * n_datasets
+            return ({'tm_type':type(self.cal), 'val':self.cal.data + self.cal.metadata,\
                 'key':'cal', 'start':self.cal.start, 'end':self.cal.end},
                    {'tm_type':type(self.cal), 'val':compr_vol,\
                 'key':'compr', 'start':self.cal.start, 'end':self.cal.end})
@@ -1061,4 +1062,133 @@ class PHI_MEMORY:
         temp1.crop += temp0.crop
         temp1.pack += temp0.pack
         temp1.free -= temp0.occu
+
+def printp(a0,gui=None):
+    meta = a0.raw.metadata
+    tot = a0.raw.data_tot
+    
+    if gui == True:
+        from streamlit import write
+        printing = write
+    else:
+        printing = print
+
+    printing('number of datasets:',a0.raw.n_datasets)
+    printing('cadence:', a0.raw.cadence,'mins')
+    printing('duration:',a0.raw.end - a0.raw.start)
+    printing('amount of raw-data at',a0.raw.n_bits,'bits:',round(a0.raw.data*1e6/2**20,1), 'MiB,',round(a0.raw.data*1e6/2**20/a0.raw.n_datasets,1),'MiB per dataset')
+
+    if hasattr(a0.raw,'crop'):
+        val = a0.raw.crop.data
+        printing('amount of crop-data at',a0.raw.n_bits,'bits:',round(val*1e6/2**20,1), \
+              'MiB,',round(val*1e6/2**20/a0.raw.n_datasets,1),'MiB per dataset')
+        meta += a0.raw.crop.metadata
+        tot += a0.raw.crop.data_tot
+        
+    
+    if hasattr(a0.raw,'pack'):
+        val = a0.raw.pack.data
+        printing('amount of pack-data at',a0.raw.pack.n_bits,'bits:',round(val*1e6/2**20,1), \
+              'MiB,',round(val*1e6/2**20/a0.raw.n_datasets,1),'MiB per dataset')
+        meta += a0.raw.pack.metadata
+        tot += a0.raw.pack.data_tot
+        
+
+    if hasattr(a0,'proc'):
+        if hasattr(a0.proc,'crop'):
+            val = a0.proc.crop.data + a0.proc.crop.interm_data
+            val_d = a0.proc.crop.data
+            nbit = a0.proc.crop.n_bits
+            meta += a0.proc.crop.metadata
+            tot += a0.proc.crop.data_tot + a0.proc.crop.interm_data_tot
+            
+        else:
+            val = a0.proc.data + a0.proc.interm_data
+            val_d = a0.proc.data
+            nbit = a0.proc.n_bits
+            meta += a0.proc.metadata
+            tot += a0.proc.data_tot + a0.proc.interm_data_tot
+            
+        printing('amount of processed data (and intermediate data) at',nbit,'bits:',round(val*1e6/2**20,1), 'MiB,',round(val_d*1e6/2**20/a0.raw.n_datasets,1),'MiB per dataset')
+    
+
+    if hasattr(a0.compr,'crop'):
+        val = a0.compr.crop.data
+        nbit = a0.compr.crop.n_bits
+        # meta += a0.compr.crop.metadata
+        # tot += a0.compr.crop.data_tot
+        # printing('tot_step5:', tot*1e6/2**20)
+    elif hasattr(a0.compr,'pack'):
+        val = a0.compr.pack.data
+        nbit = a0.compr.pack.n_bits
+        # meta += a0.compr.pack.metadata
+        # tot += a0.compr.pack.data_tot
+        # printing('tot_step6:', tot*1e6/2**20)
+    else:
+        val = a0.compr.data
+        nbit = a0.compr.n_bits
+        # meta += a0.compr.metadata
+        # tot += a0.compr.data_tot
+        # printing('tot_step7:', tot*1e6/2**20)
+    printing('amount of compressed data + metadata at',nbit,'bits:',round(val*1e6/2**20,1), 'MiB,',round(val*1e6/2**20/a0.raw.n_datasets,1),'MiB per dataset')
+    printing('amount of metadata: ', meta, 'MiB')
+    printing('amount of memory usage:',round((tot)*1e6/2**20,1), 'MiB')
+    
+    
+
+# from matplotlib import pyplot as plt
+
+def plot_tot(PHI,ylim=(0,250),fig=False):
+    plt.figure(figsize=(12,6))
+    plt.subplot(121)
+    plt.title('Partition 1')
+    s = np.argsort(PHI.part1.history['start'])
+    x = np.asarray(PHI.part1.history['start'])[s]
+    y0 = np.cumsum(np.asarray(PHI.part1.history['occu'])[s])/1e3
+    y1 = np.cumsum(np.asarray(PHI.part1.history['raw'])[s])/1e3
+    y2 = np.cumsum(np.asarray(PHI.part1.history['compr'])[s])/1e3
+    plt.plot_date(x,y0,'ro-',label='total')
+    plt.plot_date(x,y1,'g*-',label='raw')
+    plt.plot_date(x,y2,color='orange',linestyle='-',marker='<',label='compressed')
+    plt.gcf().autofmt_xdate()
+    plt.grid()
+    # plt.axhline(200,color='k',linestyle='--',alpha=.6)
+    # plt.axhline(400,color='k',linestyle='--',alpha=.6)
+    # plt.axhline(600,color='k',linestyle='--',alpha=.6)
+    # plt.axhline(800,color='k',linestyle='--',alpha=.6)
+    # plt.axhline(1000,color='k',linestyle='--',alpha=.6)
+    # plt.axhline(1200,color='k',linestyle='--',alpha=.6)
+    # plt.axhline(1400,color='k',linestyle='--',alpha=.6)
+    # plt.axhline(1600,color='k',linestyle='--',alpha=.6)
+    plt.ylim(ylim)
+    plt.xlabel('date'); plt.ylabel('memory usage (GB)')
+
+    plt.subplot(122)
+    plt.title('Partition 2')
+    s = np.argsort(PHI.part2.history['start'])
+    x = np.asarray(PHI.part2.history['start'])[s]
+    y0 = np.cumsum(np.asarray(PHI.part2.history['occu'])[s])/1e3
+    y1 = np.cumsum(np.asarray(PHI.part2.history['raw'])[s])/1e3
+    y2 = np.cumsum(np.asarray(PHI.part2.history['compr'])[s])/1e3
+    plt.plot_date(x,y0,'ro-',label='total')
+    plt.plot_date(x,y1,'g*-',label='raw')
+    plt.plot_date(x,y2,color='orange',linestyle='-',marker='<',label='compressed')
+    plt.gcf().autofmt_xdate()
+    plt.grid()
+    plt.legend()
+    # plt.axhline(200,color='k',linestyle='--',alpha=.6)
+    # plt.axhline(400,color='k',linestyle='--',alpha=.6)
+    # plt.axhline(600,color='k',linestyle='--',alpha=.6)
+    # plt.axhline(800,color='k',linestyle='--',alpha=.6)
+    # plt.axhline(1000,color='k',linestyle='--',alpha=.6)
+    # plt.axhline(1200,color='k',linestyle='--',alpha=.6)
+    # plt.axhline(1400,color='k',linestyle='--',alpha=.6)
+    # plt.axhline(1600,color='k',linestyle='--',alpha=.6)
+    plt.ylim(ylim)
+    plt.xlabel('date'); plt.ylabel('memory usage (GB)')
+
+    if fig:
+        return plt.gcf()
+    else:
+        return None
 
