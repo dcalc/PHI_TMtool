@@ -1,11 +1,23 @@
 import datetime
 import numpy as np
 import matplotlib.pyplot as plt
+import pickle
+import os
+import pandas as pd
+
+__all__ = ['PHI_MEMORY', 'PARTITION', 'RAW','PROC','CROP','PACK','COMPR','PHI_MODE','CAL','FLUSH',\
+            'roundup','plot_tot','printp']
+
 
 def roundup(x,base=8):
     return round(x) if x % base == 0 else round(x + base - x % base)
 
+class PARTITION:
+    # __all__ = ['total','free','occu','raw','proc','compr','crop','pack','cal','flush','history']
+    
+    pass
 class RAW:
+    # __all__ = ['start','end','cadence','X','Y','P','L','n_pix','n_bits','n_datasets','data','metadata','data_tot']
     def __call__(self):
         print(f'Variable info: ')
         print(f'Variable type: {type(self)}')
@@ -266,7 +278,7 @@ class PHI_MODE:
                           s.n_bits / 8e6 * s.n_outputs) * s.this_run
         s.data_tot += s.data + s.metadata
 
-        return {'tm_type':type(s), 'val':s.data + s.metadata + s.interm_data + s.interm_metadata,\
+        return {'tm_type':PROC, 'val':s.data + s.metadata + s.interm_data + s.interm_metadata,\
                 'key':'proc', 'start':s.start, 'end':s.end}
     
     
@@ -412,7 +424,7 @@ class PHI_MODE:
         
         s.data_tot += s.data
 
-        return {'tm_type':type(s), 'val':s.data,\
+        return {'tm_type':COMPR, 'val':s.data,\
                 'key':'compr', 'start':s.start, 'end':s.end}
     
     
@@ -540,7 +552,7 @@ class PHI_MODE:
                                  s.n_bits * s.n_outputs / 8e6)* s.this_run
         
         s.data_tot += s.data + s.metadata
-        return {'tm_type':type(temp.crop), 'val':s.data + s.metadata,\
+        return {'tm_type':CROP, 'val':s.data + s.metadata,\
                 'key':'crop', 'start':s.start, 'end':s.end}
     
     
@@ -659,7 +671,7 @@ class PHI_MODE:
                                  s.n_bits * s.n_outputs / 8e6) * s.this_run
         
         s.data_tot += s.data + s.metadata
-        return {'tm_type':type(s), 'val':s.data + s.metadata,\
+        return {'tm_type':PACK, 'val':s.data + s.metadata,\
                 'key':'pack', 'start':s.start, 'end':s.end}
     
     
@@ -783,51 +795,52 @@ class PHI_MEMORY:
     import numpy as np
     
     def __init__(self,start):
-        class PARTITION:
-            pass
         
-        self.part1 = PARTITION()
-        self.part2 = PARTITION()
+        if type(start) == list or type(start) == str:
+            self._load(start)
+        else:
+            self.part1 = PARTITION()
+            self.part2 = PARTITION()
+            
+            self.part1.total = 256e3 #MB
+            self.part2.total = 256e3 #MB
         
-        self.part1.total = 256e3 #MB
-        self.part2.total = 256e3 #MB
-    
-        self.part1.free = self.part1.total
-        self.part2.free = self.part2.total
-        
-        self.part1.occu = self.part1.total - self.part1.free
-        self.part2.occu = self.part2.total - self.part2.free
-        
-        self.part1.flush = 0
-        self.part2.flush = 0
-        
-        self.part1.raw = 0
-        self.part2.raw = 0
-        
-        self.part1.proc = 0
-        self.part2.proc = 0
-        
-        self.part1.compr = 0
-        self.part2.compr = 0
-        
-        self.part1.cal = 0
-        self.part2.cal = 0
-        
-        self.part1.crop = 0
-        self.part2.crop = 0
+            self.part1.free = self.part1.total
+            self.part2.free = self.part2.total
+            
+            self.part1.occu = self.part1.total - self.part1.free
+            self.part2.occu = self.part2.total - self.part2.free
+            
+            self.part1.flush = 0
+            self.part2.flush = 0
+            
+            self.part1.raw = 0
+            self.part2.raw = 0
+            
+            self.part1.proc = 0
+            self.part2.proc = 0
+            
+            self.part1.compr = 0
+            self.part2.compr = 0
+            
+            self.part1.cal = 0
+            self.part2.cal = 0
+            
+            self.part1.crop = 0
+            self.part2.crop = 0
 
-        self.part1.pack = 0
-        self.part2.pack = 0
+            self.part1.pack = 0
+            self.part2.pack = 0
 
-        self.part1.history = {'occu':[0], 'raw':[0],\
-                            'proc':[0], 'compr':[0],'crop':[0],\
-                            'cal':[0], 'flush':[0], 'pack':[0],\
-                             'start':[start],'end':[start],'type':[type(self)]}
-        self.part2.history = {'occu':[0], 'raw':[0],\
-                            'proc':[0], 'compr':[0],'crop':[0],\
-                            'cal':[0], 'flush':[0], 'pack':[0],\
-                             'start':[start],'end':[start],'type':[type(self)]}
-        
+            self.part1.history = {'occu':[0], 'raw':[0],\
+                                'proc':[0], 'compr':[0],'crop':[0],\
+                                'cal':[0], 'flush':[0], 'pack':[0],\
+                                'start':[start],'end':[start],'type':[type(self)]}
+            self.part2.history = {'occu':[0], 'raw':[0],\
+                                'proc':[0], 'compr':[0],'crop':[0],\
+                                'cal':[0], 'flush':[0], 'pack':[0],\
+                                'start':[start],'end':[start],'type':[type(self)]}
+            
     def __call__(self,index,history=False):
         if index == 1:
             temp = self.part1
@@ -1063,6 +1076,37 @@ class PHI_MEMORY:
         temp1.pack += temp0.pack
         temp1.free -= temp0.occu
 
+    def save(self,fname,overwrite = True):
+        if fname[-3:] == 'pkl':
+            if not os.path.isfile(fname):
+                with open(fname,'wb') as output:
+                    pickle.dump(self,output,pickle.HIGHEST_PROTOCOL)
+            else:
+                if overwrite:
+                    with open(fname,'wb') as output:
+                        pickle.dump(self,output,pickle.HIGHEST_PROTOCOL)
+                else:
+                    raise ValueError('Cannot overwrite',fname)
+        elif fname[-3:] == 'csv':
+            df = pd.DataFrame.from_dict(self.part1.history)
+            df = df.append(pd.DataFrame.from_dict(self.part2.history))
+            if not os.path.isfile(fname):
+                df.to_csv(fname)
+            else:
+                if overwrite:
+                    df.to_csv(fname)
+                else:
+                    raise ValueError('Cannot overwrite',fname)
+        else:
+            raise ValueError('File format not recognized. Please use .csv or .pkl')
+
+    def _load(self,fname):
+        if os.path.isfile(fname):
+            with open(fname,'rb') as handle:
+                self = pickle.load(handle)
+        else:
+            raise ValueError(fname,'not found')
+
 def printp(a0,gui=None):
     meta = a0.raw.metadata
     tot = a0.raw.data_tot
@@ -1138,57 +1182,48 @@ def printp(a0,gui=None):
 
 # from matplotlib import pyplot as plt
 
-def plot_tot(PHI,ylim=(0,250),fig=False):
-    plt.figure(figsize=(12,6))
-    plt.subplot(121)
-    plt.title('Partition 1')
-    s = np.argsort(PHI.part1.history['start'])
-    x = np.asarray(PHI.part1.history['start'])[s]
-    y0 = np.cumsum(np.asarray(PHI.part1.history['occu'])[s])/1e3
-    y1 = np.cumsum(np.asarray(PHI.part1.history['raw'])[s])/1e3
-    y2 = np.cumsum(np.asarray(PHI.part1.history['compr'])[s])/1e3
-    plt.plot_date(x,y0,'ro-',label='total')
-    plt.plot_date(x,y1,'g*-',label='raw')
-    plt.plot_date(x,y2,color='orange',linestyle='-',marker='<',label='compressed')
-    plt.gcf().autofmt_xdate()
-    plt.grid()
-    # plt.axhline(200,color='k',linestyle='--',alpha=.6)
-    # plt.axhline(400,color='k',linestyle='--',alpha=.6)
-    # plt.axhline(600,color='k',linestyle='--',alpha=.6)
-    # plt.axhline(800,color='k',linestyle='--',alpha=.6)
-    # plt.axhline(1000,color='k',linestyle='--',alpha=.6)
-    # plt.axhline(1200,color='k',linestyle='--',alpha=.6)
-    # plt.axhline(1400,color='k',linestyle='--',alpha=.6)
-    # plt.axhline(1600,color='k',linestyle='--',alpha=.6)
-    plt.ylim(ylim)
-    plt.xlabel('date'); plt.ylabel('memory usage (GB)')
+def plot_tot(PHI,ylim=(0,250),xlim=None,figp=False):
+    fig,ax = plt.subplots(1,2,figsize=(15,8),sharex=True,sharey=True)
+    ax[0].set_ylabel('memory usage (GB)')
 
-    plt.subplot(122)
-    plt.title('Partition 2')
-    s = np.argsort(PHI.part2.history['start'])
-    x = np.asarray(PHI.part2.history['start'])[s]
-    y0 = np.cumsum(np.asarray(PHI.part2.history['occu'])[s])/1e3
-    y1 = np.cumsum(np.asarray(PHI.part2.history['raw'])[s])/1e3
-    y2 = np.cumsum(np.asarray(PHI.part2.history['compr'])[s])/1e3
-    plt.plot_date(x,y0,'ro-',label='total')
-    plt.plot_date(x,y1,'g*-',label='raw')
-    plt.plot_date(x,y2,color='orange',linestyle='-',marker='<',label='compressed')
-    plt.gcf().autofmt_xdate()
-    plt.grid()
-    plt.legend()
-    # plt.axhline(200,color='k',linestyle='--',alpha=.6)
-    # plt.axhline(400,color='k',linestyle='--',alpha=.6)
-    # plt.axhline(600,color='k',linestyle='--',alpha=.6)
-    # plt.axhline(800,color='k',linestyle='--',alpha=.6)
-    # plt.axhline(1000,color='k',linestyle='--',alpha=.6)
-    # plt.axhline(1200,color='k',linestyle='--',alpha=.6)
-    # plt.axhline(1400,color='k',linestyle='--',alpha=.6)
-    # plt.axhline(1600,color='k',linestyle='--',alpha=.6)
-    plt.ylim(ylim)
-    plt.xlabel('date'); plt.ylabel('memory usage (GB)')
+    for axi, temp, i in zip(ax,[PHI.part1.history,PHI.part2.history],['1','2']):
+        # plt.subplot(121)
+        axi.set_title('Partition '+i)
+        
+        y0 = temp['occu']
+        y1 = temp['occu']
 
-    if fig:
-        return plt.gcf()
+        x = [None]*(len(y0)+len(y1))
+        o = [None]*(len(y0)+len(y1))
+        r = [None]*(len(y0)+len(y1))
+        c = [None]*(len(y0)+len(y1))
+        
+        x[::2] = temp['start']
+        x[1::2] = temp['end']; del x[1]
+        o[::2] = np.cumsum(y0)/1e3
+        o[1::2] = np.cumsum(y1)/1e3; del o[-1]
+        r[::2] = np.cumsum(temp['raw'])/1e3
+        r[1::2] = np.cumsum(temp['raw'])/1e3; del r[-1]
+        c[::2] = np.cumsum(temp['compr'])/1e3
+        c[1::2] = np.cumsum(temp['compr'])/1e3; del c[-1]
+        del y0, y1
+
+        axi.plot_date(x,o,'ro-',label='total')
+        axi.plot_date(x,r,'g*-',label='raw')
+        axi.plot_date(x,c,color='orange',linestyle='-',marker='<',label='compressed')
+        
+        axi.grid()
+        axi.axhline(240,color='k',linestyle='--',linewidth=2)
+        
+        axi.set_ylim(ylim)
+        if xlim is not None:
+            axi.set_xlim(xlim)
+        axi.set_xlabel('date'); 
+    
+    fig.autofmt_xdate()
+    
+    if figp:
+        return fig
     else:
         return None
 

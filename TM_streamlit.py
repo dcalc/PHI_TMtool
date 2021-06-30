@@ -2,6 +2,7 @@ import streamlit as st
 from TMclass import *
 import numpy as np
 import datetime
+# import pickle
 # import pandas as pd
 
 def observation(i,phi):
@@ -227,8 +228,10 @@ def observation(i,phi):
 	
 	# st.write('Total amount of compressed data + metadata:',round(phi.part1.compr,1), 'MB')
 	# st.write('number of datasets for this run:',a0.raw.n_datasets)
-
-	printp(a0,gui=True)
+	try:
+		printp(a0,gui=True)
+	except:
+		pass
 	# df = pd.DataFrame.from_dict(phi.part1.history)
 
 	return phi
@@ -263,4 +266,13 @@ for i,ci in enumerate(c):
 # fig = phi.plot(1,time_ordered = time_order, bar=True)
 # st.pyplot(fig)
 ymax = st.sidebar.slider('y axis maximum',0,500,250,step=5)
-st.pyplot(plot_tot(phi,ylim=(0,ymax),fig=True))
+
+try:
+	xmin = phi.part1.history['start'][0].date() - datetime.timedelta(days=2)
+	xmax = max(phi.part1.history['end'][-1].date(),phi.part2.history['end'][-1].date()) + datetime.timedelta(days=2)
+	format = 'YYYY-MM-DD'
+
+	xlim = st.sidebar.slider('Select x axis range', min_value=xmin, value=[xmin,xmax] ,max_value=xmax, format=format)
+except:
+	xlim = None
+st.pyplot(plot_tot(phi,ylim=(0,ymax),xlim=xlim,figp=True))
