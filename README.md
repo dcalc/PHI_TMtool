@@ -11,6 +11,7 @@ pip install -r requirements.txt
 streamlit run TM_streamlit.py
 ```
 The streamlit application can be found at this url: https://share.streamlit.io/dcalc/phi_tmtool/main/TM_streamlit.py<br />
+<a href="https://share.streamlit.io/dcalc/phi_tmtool/main/TM_streamlit.py" target="_blank">TM_streamlit</a>
 
 ## EXAMPLE
 1. ```TM_NMP1_v1.ipynb``` shows a preliminary version of memory usage during the NMP Segment 1. <br />
