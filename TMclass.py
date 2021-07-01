@@ -1100,10 +1100,16 @@ class PHI_MEMORY:
         else:
             raise ValueError('File format not recognized. Please use .csv or .pkl')
 
+    
     def _load(self,fname):
         if os.path.isfile(fname):
-            with open(fname,'rb') as handle:
-                self = pickle.load(handle)
+            if fname[-3:] == 'pkl':
+                with open(fname,'rb') as handle:
+                    self = pickle.load(handle)
+            elif fname[-3:] == 'csv':
+                self = _load_csv(self,fname)
+            else:
+                raise ValueError('File format not recognized. Please use .csv or .pkl')
         else:
             raise ValueError(fname,'not found')
 
@@ -1227,3 +1233,54 @@ def plot_tot(PHI,ylim=(0,250),xlim=None,figp=False):
     else:
         return None
 
+def _load_csv(phi_memory,fname):
+
+        phi_memory.part1 = PARTITION()
+        phi_memory.part2 = PARTITION()
+        dateparse = lambda x: datetime.datetime.strptime(x, '%Y-%m-%d %H:%M:%S')
+        df = pd.read_csv(fname, parse_dates=[9,10], date_parser=dateparse)
+
+        indexes = df[df.type == str(PHI_MEMORY)].index
+
+        df1 = df[:indexes[1]]
+        df2 = df[indexes[1]:]
+
+        for part, dfi in zip([phi_memory.part1,phi_memory.part2], [df1,df2]):
+            
+
+            # p = PHI_MEMORY(dfi.start[0])
+
+            dict1 = dfi.to_dict(orient='list')
+            del dict1['Unnamed: 0']
+            for i,val in enumerate(dict1['start']):
+                dict1['start'][i] = datetime.datetime.fromisoformat(str(val))
+            for i,val in enumerate(dict1['end']):
+                dict1['end'][i] = datetime.datetime.fromisoformat(str(val))
+
+
+            Class_list = [PHI_MEMORY, RAW, PROC, CROP, PACK, COMPR, CAL, FLUSH, PHI_MODE, PHI_MEMORY.format_partition]
+            stringClass_list = [str(s) for s in Class_list]; stringClass_list[-1] = stringClass_list[-1][:-19]
+            
+            for l, val in enumerate(dict1['type']):
+                try:
+                    ind = [jj for jj,ii in enumerate(stringClass_list) if val in ii][0]
+                    dict1['type'][l] = Class_list[ind]
+                except:
+                    dict1['type'][l] = Class_list[-1]
+
+            dict1['type']
+
+            part.history = dict1
+
+            temp = part
+            temp.occu = np.sum(temp.history['occu'])
+            temp.raw = np.sum(temp.history['raw'])
+            temp.proc = np.sum(temp.history['proc'])
+            temp.compr = np.sum(temp.history['compr'])
+            temp.pack = np.sum(temp.history['pack'])
+            temp.crop = np.sum(temp.history['crop'])
+            temp.flush = np.sum(temp.history['flush'])
+            temp.cal = np.sum(temp.history['cal'])
+            temp.free = temp.total = temp.occu
+
+        return phi_memory

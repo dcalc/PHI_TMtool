@@ -242,23 +242,31 @@ st.set_page_config(page_title='TMtool',
 
 st.title('SO/PHI Telemetry Tool v1.0')
 
-start_date = st.sidebar.date_input('Insert starting reference date',value=datetime.date(2022,1,1))
+radio = st.sidebar.radio('Do you want to start a new Tool or upload a file?', options=['New','Upload'], index=1)
 
-start_date = datetime.datetime.combine(start_date, 
-		                  datetime.time(0,0,0))
+if radio == 'Upload':
+	fname = st.sidebar.text_input('Insert the input file name (.csv or .pkl)', value='./')
+	try:
+		phi = PHI_MEMORY(fname)
+	except:
+		pass
+else:
+	start_date = st.sidebar.date_input('Insert starting reference date',value=datetime.date(2022,1,1))
 
-phi = PHI_MEMORY(start_date)
+	start_date = datetime.datetime.combine(start_date, 
+							datetime.time(0,0,0))
 
-N = st.sidebar.number_input("How many observation do you need to run?",min_value=1, step=1)
+	phi = PHI_MEMORY(start_date)
 
-c = st.beta_columns(N)
+N = st.sidebar.number_input("How many observation do you need to run?",min_value=0, step=1, value=1)
 
-# clast = c[-1]
-
-for i,ci in enumerate(c):
-	with ci:
-		phi = observation(i+1,phi)
-
+try:
+	c = st.beta_columns(N)
+	for i,ci in enumerate(c):
+		with ci:
+			phi = observation(i+1,phi)
+except:
+	pass
 # with clast:
 #st.write("Plot!")
 #st.line_chart(df)
@@ -275,4 +283,18 @@ try:
 	xlim = st.sidebar.slider('Select x axis range', min_value=xmin, value=[xmin,xmax] ,max_value=xmax, format=format)
 except:
 	xlim = None
-st.pyplot(plot_tot(phi,ylim=(0,ymax),xlim=xlim,figp=True))
+
+try:
+	st.pyplot(plot_tot(phi,ylim=(0,ymax),xlim=xlim,figp=True))
+except:
+	st.pyplot(plot_tot(PHI_MEMORY(datetime.datetime(2022,1,1,0,0,0)),ylim=(0,ymax),xlim=xlim,figp=True))
+
+save = st.sidebar.checkbox('Do you want to save the PHI_MEMORY variable?')
+
+if save:
+	fname = st.sidebar.text_input('Insert the output file name (.csv or .pkl)', value='./')
+	try:
+		phi.save(fname,overwrite=True)
+		st.sidebar.write('`'+fname+'`','saved')
+	except:
+		pass
