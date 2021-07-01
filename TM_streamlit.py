@@ -2,6 +2,7 @@ import streamlit as st
 from TMclass import *
 import numpy as np
 import datetime
+import base64
 # import pickle
 # import pandas as pd
 
@@ -245,9 +246,10 @@ st.title('SO/PHI Telemetry Tool v1.0')
 radio = st.sidebar.radio('Do you want to start a new Tool or upload a file?', options=['New','Upload'], index=1)
 
 if radio == 'Upload':
-	fname = st.sidebar.text_input('Insert the input file name (.csv or .pkl)', value='./')
+	fname = st.sidebar.file_uploader('Insert the input file name (.csv or .pkl)')
+	# fname = st.sidebar.text_input('Insert the input file name (.csv or .pkl)', value='./')
 	try:
-		phi = PHI_MEMORY(fname)
+		phi = PHI_MEMORY(fname.name)
 	except:
 		pass
 else:
@@ -292,9 +294,13 @@ except:
 save = st.sidebar.checkbox('Do you want to save the PHI_MEMORY variable?')
 
 if save:
-	fname = st.sidebar.text_input('Insert the output file name (.csv or .pkl)', value='./')
+	fname = st.sidebar.text_input('Insert the output file name (only .csv!)', value='.csv')
+	
 	try:
-		phi.save(fname,overwrite=True)
-		st.sidebar.write('`'+fname+'`','saved')
+		
+		b64 = phi.save(fname,gui=True)
+		href = f'<a href="data:file/csv;base64, {b64}" download="'+fname+'">Download csv file</a>'
+		st.sidebar.markdown(href,unsafe_allow_html=True)
+		# st.sidebar.write('`'+fname+'`','saved')
 	except:
 		pass

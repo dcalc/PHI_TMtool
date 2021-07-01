@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import pickle
 import os
 import pandas as pd
+import base64
 
 __all__ = ['PHI_MEMORY', 'PARTITION', 'RAW','PROC','CROP','PACK','COMPR','PHI_MODE','CAL','FLUSH',\
             'roundup','plot_tot','printp']
@@ -1076,31 +1077,42 @@ class PHI_MEMORY:
         temp1.pack += temp0.pack
         temp1.free -= temp0.occu
 
-    def save(self,fname,overwrite = True):
-        if fname[-3:] == 'pkl':
-            if not os.path.isfile(fname):
-                with open(fname,'wb') as output:
-                    pickle.dump(self,output,pickle.HIGHEST_PROTOCOL)
+    def save(self,fname,overwrite = True,gui=False):
+
+        if gui:
+            if fname[-3:] == 'csv':
+                df = pd.DataFrame.from_dict(self.part1.history)
+                df = df.append(pd.DataFrame.from_dict(self.part2.history))
+                csv = df.to_csv(index=False)
+                b64 = base64.b64encode(csv.encode()).decode()
+                return b64
+                
             else:
-                if overwrite:
+                raise ValueError('File format not recognized. Please use .csv')
+        else:
+            if fname[-3:] == 'pkl':
+                if not os.path.isfile(fname):
                     with open(fname,'wb') as output:
                         pickle.dump(self,output,pickle.HIGHEST_PROTOCOL)
                 else:
-                    raise ValueError('Cannot overwrite',fname)
-        elif fname[-3:] == 'csv':
-            df = pd.DataFrame.from_dict(self.part1.history)
-            df = df.append(pd.DataFrame.from_dict(self.part2.history))
-            if not os.path.isfile(fname):
-                df.to_csv(fname)
-            else:
-                if overwrite:
+                    if overwrite:
+                        with open(fname,'wb') as output:
+                            pickle.dump(self,output,pickle.HIGHEST_PROTOCOL)
+                    else:
+                        raise ValueError('Cannot overwrite',fname)
+            elif fname[-3:] == 'csv':
+                df = pd.DataFrame.from_dict(self.part1.history)
+                df = df.append(pd.DataFrame.from_dict(self.part2.history))
+                if not os.path.isfile(fname):
                     df.to_csv(fname)
                 else:
-                    raise ValueError('Cannot overwrite',fname)
-        else:
-            raise ValueError('File format not recognized. Please use .csv or .pkl')
-
-    
+                    if overwrite:
+                        df.to_csv(fname)
+                    else:
+                        raise ValueError('Cannot overwrite',fname)
+            else:
+                raise ValueError('File format not recognized. Please use .csv or .pkl')
+  
     def _load(self,fname):
         if os.path.isfile(fname):
             if fname[-3:] == 'pkl':
