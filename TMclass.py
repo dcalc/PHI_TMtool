@@ -795,52 +795,55 @@ class PHI_MEMORY:
     import matplotlib.pyplot as plt
     import numpy as np
     
-    def __init__(self,start):
+    def __init__(self,start,gui=False):
         
-        if type(start) == list or type(start) == str:
-            self._load(start)
+        if gui:
+            self._load(start,gui)
         else:
-            self.part1 = PARTITION()
-            self.part2 = PARTITION()
+            if type(start) == list or type(start) == str:
+                self._load(start,gui)
+            else:
+                self.part1 = PARTITION()
+                self.part2 = PARTITION()
+                
+                self.part1.total = 256e3 #MB
+                self.part2.total = 256e3 #MB
             
-            self.part1.total = 256e3 #MB
-            self.part2.total = 256e3 #MB
-        
-            self.part1.free = self.part1.total
-            self.part2.free = self.part2.total
-            
-            self.part1.occu = self.part1.total - self.part1.free
-            self.part2.occu = self.part2.total - self.part2.free
-            
-            self.part1.flush = 0
-            self.part2.flush = 0
-            
-            self.part1.raw = 0
-            self.part2.raw = 0
-            
-            self.part1.proc = 0
-            self.part2.proc = 0
-            
-            self.part1.compr = 0
-            self.part2.compr = 0
-            
-            self.part1.cal = 0
-            self.part2.cal = 0
-            
-            self.part1.crop = 0
-            self.part2.crop = 0
+                self.part1.free = self.part1.total
+                self.part2.free = self.part2.total
+                
+                self.part1.occu = self.part1.total - self.part1.free
+                self.part2.occu = self.part2.total - self.part2.free
+                
+                self.part1.flush = 0
+                self.part2.flush = 0
+                
+                self.part1.raw = 0
+                self.part2.raw = 0
+                
+                self.part1.proc = 0
+                self.part2.proc = 0
+                
+                self.part1.compr = 0
+                self.part2.compr = 0
+                
+                self.part1.cal = 0
+                self.part2.cal = 0
+                
+                self.part1.crop = 0
+                self.part2.crop = 0
 
-            self.part1.pack = 0
-            self.part2.pack = 0
+                self.part1.pack = 0
+                self.part2.pack = 0
 
-            self.part1.history = {'occu':[0], 'raw':[0],\
-                                'proc':[0], 'compr':[0],'crop':[0],\
-                                'cal':[0], 'flush':[0], 'pack':[0],\
-                                'start':[start],'end':[start],'type':[type(self)]}
-            self.part2.history = {'occu':[0], 'raw':[0],\
-                                'proc':[0], 'compr':[0],'crop':[0],\
-                                'cal':[0], 'flush':[0], 'pack':[0],\
-                                'start':[start],'end':[start],'type':[type(self)]}
+                self.part1.history = {'occu':[0], 'raw':[0],\
+                                    'proc':[0], 'compr':[0],'crop':[0],\
+                                    'cal':[0], 'flush':[0], 'pack':[0],\
+                                    'start':[start],'end':[start],'type':[type(self)]}
+                self.part2.history = {'occu':[0], 'raw':[0],\
+                                    'proc':[0], 'compr':[0],'crop':[0],\
+                                    'cal':[0], 'flush':[0], 'pack':[0],\
+                                    'start':[start],'end':[start],'type':[type(self)]}
             
     def __call__(self,index,history=False):
         if index == 1:
@@ -1113,17 +1116,21 @@ class PHI_MEMORY:
             else:
                 raise ValueError('File format not recognized. Please use .csv or .pkl')
   
-    def _load(self,fname):
-        if os.path.isfile(fname):
-            if fname[-3:] == 'pkl':
-                with open(fname,'rb') as handle:
-                    self = pickle.load(handle)
-            elif fname[-3:] == 'csv':
-                self = _load_csv(self,fname)
-            else:
-                raise ValueError('File format not recognized. Please use .csv or .pkl')
+    def _load(self,fname,gui=False):
+
+        if gui:
+            self = _load_csv(self,fname)            
         else:
-            raise ValueError(fname,'not found')
+            if os.path.isfile(fname):
+                if fname[-3:] == 'pkl':
+                    with open(fname,'rb') as handle:
+                        self = pickle.load(handle)
+                elif fname[-3:] == 'csv':
+                    self = _load_csv(self,fname)
+                else:
+                    raise ValueError('File format not recognized. Please use .csv or .pkl')
+            else:
+                raise ValueError(fname,'not found')
 
 def printp(a0,gui=None):
     meta = a0.raw.metadata

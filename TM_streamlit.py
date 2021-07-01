@@ -246,10 +246,10 @@ st.title('SO/PHI Telemetry Tool v1.0')
 radio = st.sidebar.radio('Do you want to start a new Tool or upload a file?', options=['New','Upload'], index=1)
 
 if radio == 'Upload':
-	fname = st.sidebar.file_uploader('Insert the input file name (.csv or .pkl)')
-	# fname = st.sidebar.text_input('Insert the input file name (.csv or .pkl)', value='./')
+	fname = st.sidebar.file_uploader('Choose the input file name (only .csv)')
+	
 	try:
-		phi = PHI_MEMORY(fname.name)
+		phi = PHI_MEMORY(fname,gui=True)
 	except:
 		pass
 else:
@@ -269,12 +269,7 @@ try:
 			phi = observation(i+1,phi)
 except:
 	pass
-# with clast:
-#st.write("Plot!")
-#st.line_chart(df)
-# time_order = st.sidebar.checkbox('Plot in temporal order?')
-# fig = phi.plot(1,time_ordered = time_order, bar=True)
-# st.pyplot(fig)
+
 ymax = st.sidebar.slider('y axis maximum',0,500,250,step=5)
 
 try:
@@ -294,7 +289,7 @@ except:
 save = st.sidebar.checkbox('Do you want to save the PHI_MEMORY variable?')
 
 if save:
-	fname = st.sidebar.text_input('Insert the output file name (only .csv!)', value='.csv')
+	fname = st.sidebar.text_input('Insert the output file name (only .csv)', value='.csv')
 	
 	try:
 		
