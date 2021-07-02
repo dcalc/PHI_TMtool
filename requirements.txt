@@ -3,4 +3,6 @@ matplotlib
 streamlit
 datetime
 pandas
+os
+pickle
 base64
