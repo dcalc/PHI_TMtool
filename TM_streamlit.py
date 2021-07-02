@@ -247,7 +247,8 @@ radio = st.sidebar.radio('Do you want to start a new Tool or upload a file?', op
 
 if radio == 'Upload':
 	fname = st.sidebar.file_uploader('Choose the input file name (only .csv)')
-	phi = PHI_MEMORY(fname,gui=True)
+	if fname is not None:
+		phi = PHI_MEMORY(fname,gui=True)
 	# try:
 	# 	phi = PHI_MEMORY(fname,gui=True)
 	# except:
