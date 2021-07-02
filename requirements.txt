@@ -2,6 +2,5 @@ numpy
 matplotlib
 streamlit
 datetime
-os
 pandas
 base64
