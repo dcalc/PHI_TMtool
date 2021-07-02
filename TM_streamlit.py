@@ -247,11 +247,11 @@ radio = st.sidebar.radio('Do you want to start a new Tool or upload a file?', op
 
 if radio == 'Upload':
 	fname = st.sidebar.file_uploader('Choose the input file name (only .csv)')
-	
-	try:
-		phi = PHI_MEMORY(fname,gui=True)
-	except:
-		pass
+	phi = PHI_MEMORY(fname,gui=True)
+	# try:
+	# 	phi = PHI_MEMORY(fname,gui=True)
+	# except:
+	# 	pass
 else:
 	start_date = st.sidebar.date_input('Insert starting reference date',value=datetime.date(2022,1,1))
 
@@ -290,12 +290,14 @@ save = st.sidebar.checkbox('Do you want to save the PHI_MEMORY variable?')
 
 if save:
 	fname = st.sidebar.text_input('Insert the output file name (only .csv)', value='.csv')
-	
-	try:
+	b64 = phi.save(fname,gui=True)
+	href = f'<a href="data:file/csv;base64, {b64}" download="'+fname+'">Download csv file</a>'
+	st.sidebar.markdown(href,unsafe_allow_html=True)
+	# try:
 		
-		b64 = phi.save(fname,gui=True)
-		href = f'<a href="data:file/csv;base64, {b64}" download="'+fname+'">Download csv file</a>'
-		st.sidebar.markdown(href,unsafe_allow_html=True)
+		# b64 = phi.save(fname,gui=True)
+		# href = f'<a href="data:file/csv;base64, {b64}" download="'+fname+'">Download csv file</a>'
+		# st.sidebar.markdown(href,unsafe_allow_html=True)
 		# st.sidebar.write('`'+fname+'`','saved')
-	except:
-		pass
+	# except:
+	# 	pass
