@@ -3,8 +3,8 @@ from TMclass import *
 import numpy as np
 import datetime
 import base64
-# import pickle
-# import pandas as pd
+import pickle
+import pandas as pd
 
 def observation(i,phi):
 	i = str(i)

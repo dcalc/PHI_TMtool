@@ -137,12 +137,18 @@ class PHI_MODE:
         self.raw = RAW()
         self.raw.cadence = cadence
         self.raw.start = start
-        self.raw.end = end
+
+        if type(end) is int:
+            self.raw.n_datasets = end
+            self.raw.end = datetime.timedelta(minutes=self.raw.n_datasets * self.raw.cadence) + self.raw.start
+        else:
+            self.raw.end = end
+            self.raw.n_datasets = int((self.raw.end - self.raw.start).total_seconds() / (60*self.raw.cadence))
+        
         self.raw.n_bits = 32
         self.raw.X = shape[1]; self.raw.Y = shape[0]; self.raw.P = shape[2]; self.raw.L = shape[3]
         self.raw.n_pix = self.raw.X*self.raw.Y*self.raw.P*self.raw.L
         self.raw.n_outputs = self.raw.L * self.raw.P
-        self.raw.n_datasets = int((self.raw.end - self.raw.start).total_seconds() / (60*self.raw.cadence))
         self.raw.this_run = self.raw.n_datasets
         # MB of raw metadata
         self.raw.metadata = 8 * self.raw.n_datasets
@@ -180,7 +186,7 @@ class PHI_MODE:
                         s = self.proc.crop
                         s.n_datasets = 0
                         s.not_datasets = temp.n_datasets
-                        s.cpu_time = datetime.timedelta(minutes=40) #TBD
+                        s.cpu_time = datetime.timedelta(minutes=60) #TBD
                         s.interm_data_tot = 0
                         s.data_tot = 0
                         s.n_datasets = 0
@@ -202,11 +208,11 @@ class PHI_MODE:
                 print(f'Exceeding the number of datasets, ndata set to {s.not_datasets}')
                 s.n_datasets = temp.n_datasets
                 s.not_datasets = 0
-            elif type(ndata) == datetime.datetime:
-                s.end = ndata
-                s.this_run = min(s.not_datasets,int(ndata-start)/s.cpu_time)
-                s.n_datasets += s.this_run
-                s.not_datasets -= s.this_run
+            # elif type(ndata) == datetime.datetime:
+            #     s.end = ndata
+            #     s.this_run = min(s.not_datasets,int(ndata-start)/s.cpu_time)
+            #     s.n_datasets += s.this_run
+            #     s.not_datasets -= s.this_run
                 
         else:
             if not '.' in level:
@@ -226,7 +232,7 @@ class PHI_MODE:
                     raise ValueError ('level not accepted (only raw and raw.crop)')
             
             s.start = start
-            s.cpu_time = datetime.timedelta(minutes=40) #TBD
+            s.cpu_time = datetime.timedelta(minutes=60) #TBD
             s.n_outputs = nout
             s.interm_data_tot = 0
             s.data_tot = 0
@@ -244,11 +250,11 @@ class PHI_MODE:
                 s.n_datasets = temp.n_datasets
                 s.this_run = temp.n_datasets
                 s.not_datasets = 0
-            elif type(ndata) == datetime.datetime:
-                s.end = ndata
-                s.this_run = min(temp.n_datasets,int(ndata-start)/s.cpu_time)
-                s.n_datasets += self.proc.this_run
-                s.not_datasets = temp.n_datasets - s.this_run
+            # elif type(ndata) == datetime.datetime:
+            #     s.end = ndata
+            #     s.this_run = min(temp.n_datasets,int(ndata-start)/s.cpu_time)
+            #     s.n_datasets += self.proc.this_run
+            #     s.not_datasets = temp.n_datasets - s.this_run
         
         s.end = s.start + s.cpu_time * s.this_run
         # intermediate processing steps
@@ -318,7 +324,7 @@ class PHI_MODE:
                         s = self.compr.crop
                         s.n_datasets = 0
                         s.not_datasets = temp.n_datasets
-                        s.cpu_time = datetime.timedelta(minutes=1) #TBD
+                        # s.cpu_time = datetime.timedelta(minutes=1) #TBD
                         s.data_tot = 0
                         s.n_datasets = 0
                         
@@ -330,7 +336,7 @@ class PHI_MODE:
                         s = self.compr.pack
                         s.n_datasets = 0
                         s.not_datasets = temp.n_datasets
-                        s.cpu_time = datetime.timedelta(minutes=1) #TBD
+                        # s.cpu_time = datetime.timedelta(minutes=1) #TBD
                         s.data_tot = 0
                         s.n_datasets = 0
                 else:
@@ -352,11 +358,11 @@ class PHI_MODE:
                 print(f'Exceeding the number of datasets, ndata set to {max_data}')
                 s.n_datasets = temp.n_datasets
                 s.not_datasets = 0
-            elif type(ndata) == datetime.datetime:
-                s.end = ndata
-                s.this_run = min(s.not_datasets,int(ndata-start)/s.cpu_time)
-                s.n_datasets += s.this_run
-                s.not_datasets -= s.this_run
+            # elif type(ndata) == datetime.datetime:
+            #     s.end = ndata
+            #     s.this_run = min(s.not_datasets,int(ndata-start)/s.cpu_time)
+            #     s.n_datasets += s.this_run
+            #     s.not_datasets -= s.this_run
                 
         else:
             if not '.' in level:
@@ -382,7 +388,7 @@ class PHI_MODE:
             
             s.start = start
             s.n_outputs = temp.n_outputs
-            s.cpu_time = datetime.timedelta(minutes=1) #TBD
+            # s.cpu_time = datetime.timedelta(minutes=1) #TBD
             s.data_tot = 0
             s.n_datasets = 0
             if ndata == -1:
@@ -398,14 +404,12 @@ class PHI_MODE:
                 s.n_datasets = temp.n_datasets
                 s.this_run = temp.n_datasets
                 s.not_datasets = 0
-            elif type(ndata) == datetime.datetime:
-                s.end = ndata
-                s.this_run = min(temp.n_datasets,int(ndata-start)/s.cpu_time)
-                s.n_datasets += self.proc.this_run
-                s.not_datasets = temp.n_datasets - s.this_run
+            # elif type(ndata) == datetime.datetime:
+            #     s.end = ndata
+            #     s.this_run = min(temp.n_datasets,int(ndata-start)/s.cpu_time)
+            #     s.n_datasets += self.proc.this_run
+            #     s.not_datasets = temp.n_datasets - s.this_run
         
-        s.end = s.start + s.cpu_time * s.this_run
-        s.n_bits = nbits
         if hasattr(temp,'crop_x'):
             s.crop_x = temp.crop_x
             s.crop_y = temp.crop_y
@@ -413,6 +417,10 @@ class PHI_MODE:
         else:
             s.crop_x = self.raw.X
             s.crop_y = self.raw.Y
+
+        s.cpu_time = datetime.timedelta(minutes=10) * s.crop_x * s.crop_y * s.n_outputs / 100663296 #TBD
+        s.end = s.start + s.cpu_time * s.this_run
+        s.n_bits = nbits
             
         #MB of compressed data + metadata
         
@@ -490,11 +498,11 @@ class PHI_MODE:
                 s.n_datasets = temp.n_datasets
                 s.this_run = temp.n_datasets
                 s.not_datasets = 0
-            elif type(ndata) == datetime.datetime:
-                s.end = ndata
-                s.this_run = min(temp.n_datasets,int(ndata-start)/s.cpu_time)
-                s.n_datasets += s.this_run
-                s.not_datasets = temp.n_datasets - s.n_datasets     
+            # elif type(ndata) == datetime.datetime:
+            #     s.end = ndata
+            #     s.this_run = min(temp.n_datasets,int(ndata-start)/s.cpu_time)
+            #     s.n_datasets += s.this_run
+            #     s.not_datasets = temp.n_datasets - s.n_datasets     
         else:
             if not '.' in level:
                 temp = getattr(self,level)
@@ -512,7 +520,7 @@ class PHI_MODE:
             s.start = start
             s.crop_x = crop_x
             s.crop_y = crop_y
-            s.cpu_time = datetime.timedelta(minutes=1) #TBD
+            # s.cpu_time = datetime.timedelta(minutes=1) #TBD
             s.n_outputs = temp.n_outputs
             s.data_tot = 0
             s.n_datasets = 0
@@ -529,13 +537,16 @@ class PHI_MODE:
                 s.n_datasets = temp.n_datasets
                 s.this_run = temp.n_datasets
                 s.not_datasets = 0
-            elif type(ndata) == datetime.datetime:
-                s.end = ndata
-                s.this_run = min(temp.n_datasets,int(ndata-start)/s.cpu_time)
-                s.n_datasets += s.this_run
-                s.not_datasets = s.n_datasets - s.this_run
+            # elif type(ndata) == datetime.datetime:
+            #     s.end = ndata
+            #     s.this_run = min(temp.n_datasets,int(ndata-start)/s.cpu_time)
+            #     s.n_datasets += s.this_run
+            #     s.not_datasets = s.n_datasets - s.this_run
         
+        s.cpu_time = datetime.timedelta(seconds=80) * s.crop_x * s.crop_y * s.n_outputs / 100663296 #TBD
         s.end = s.start + s.cpu_time * s.this_run
+        
+        # s.end = s.start + s.cpu_time * s.this_run
         
         s.n_bits = temp.n_bits
         if 'pack' in level:
@@ -606,11 +617,11 @@ class PHI_MODE:
                 s.n_datasets = temp.n_datasets
                 s.this_run = temp.n_datasets
                 s.not_datasets = 0
-            elif type(ndata) == datetime.datetime:
-                s.end = ndata
-                s.this_run = min(temp.n_datasets,int(ndata-start)/s.cpu_time)
-                s.n_datasets += s.this_run
-                s.not_datasets = temp.n_datasets - s.n_datasets     
+            # elif type(ndata) == datetime.datetime:
+            #     s.end = ndata
+            #     s.this_run = min(temp.n_datasets,int(ndata-start)/s.cpu_time)
+            #     s.n_datasets += s.this_run
+            #     s.not_datasets = temp.n_datasets - s.n_datasets     
         else:
             if not '.' in level:
                 temp = getattr(self,level)
@@ -627,7 +638,6 @@ class PHI_MODE:
             s.level = level
             s.start = start
             s.n_bits = 16
-            s.cpu_time = datetime.timedelta(minutes=1) #TBD
             s.n_outputs = temp.n_outputs
             s.data_tot = 0
             s.n_datasets = 0
@@ -644,13 +654,11 @@ class PHI_MODE:
                 s.n_datasets = temp.n_datasets
                 s.this_run = temp.n_datasets
                 s.not_datasets = 0
-            elif type(ndata) == datetime.datetime:
-                s.end = ndata
-                s.this_run = min(temp.n_datasets,int(ndata-start)/s.cpu_time)
-                s.n_datasets += s.this_run
-                s.not_datasets = s.n_datasets - s.this_run
-        
-        s.end = s.start + s.cpu_time * s.this_run
+            # elif type(ndata) == datetime.datetime:
+            #     s.end = ndata
+            #     s.this_run = min(temp.n_datasets,int(ndata-start)/s.cpu_time)
+            #     s.n_datasets += s.this_run
+            #     s.not_datasets = s.n_datasets - s.this_run
         
         if hasattr(temp,'crop_x'):
             s.crop_x = temp.crop_x
@@ -659,6 +667,9 @@ class PHI_MODE:
         else:
             s.crop_x = self.raw.X
             s.crop_y = self.raw.Y
+
+        s.cpu_time = datetime.timedelta(seconds=80) * s.crop_x * s.crop_y * s.n_outputs / 100663296 #TBD
+        s.end = s.start + s.cpu_time * s.this_run
                 
         #MB of packed data + metadata
         
@@ -1132,7 +1143,7 @@ class PHI_MEMORY:
             else:
                 raise ValueError(fname,'not found')
 
-def printp(a0,gui=None):
+def printp(a0,label=None,gui=None):
     meta = a0.raw.metadata
     tot = a0.raw.data_tot
     
@@ -1142,6 +1153,7 @@ def printp(a0,gui=None):
     else:
         printing = print
 
+    printing(label)
     printing('number of datasets:',a0.raw.n_datasets)
     printing('cadence:', a0.raw.cadence,'mins')
     printing('duration:',a0.raw.end - a0.raw.start)
@@ -1153,6 +1165,7 @@ def printp(a0,gui=None):
               'MiB,',round(val*1e6/2**20/a0.raw.n_datasets,1),'MiB per dataset')
         meta += a0.raw.crop.metadata
         tot += a0.raw.crop.data_tot
+        printing('cropping time:',a0.raw.crop.end - a0.raw.crop.start)
         
     
     if hasattr(a0.raw,'pack'):
@@ -1161,7 +1174,7 @@ def printp(a0,gui=None):
               'MiB,',round(val*1e6/2**20/a0.raw.n_datasets,1),'MiB per dataset')
         meta += a0.raw.pack.metadata
         tot += a0.raw.pack.data_tot
-        
+        printing('packing time:',a0.raw.pack.end - a0.raw.pack.start)
 
     if hasattr(a0,'proc'):
         if hasattr(a0.proc,'crop'):
@@ -1170,67 +1183,76 @@ def printp(a0,gui=None):
             nbit = a0.proc.crop.n_bits
             meta += a0.proc.crop.metadata
             tot += a0.proc.crop.data_tot + a0.proc.crop.interm_data_tot
-            
+            printing('processing time:',a0.proc.crop.end - a0.proc.crop.start)
         else:
             val = a0.proc.data + a0.proc.interm_data
             val_d = a0.proc.data
             nbit = a0.proc.n_bits
             meta += a0.proc.metadata
             tot += a0.proc.data_tot + a0.proc.interm_data_tot
-            
+            printing('processing time:',a0.proc.end - a0.proc.start)
+
         printing('amount of processed data (and intermediate data) at',nbit,'bits:',round(val*1e6/2**20,1), 'MiB,',round(val_d*1e6/2**20/a0.raw.n_datasets,1),'MiB per dataset')
     
-
-    if hasattr(a0.compr,'crop'):
-        val = a0.compr.crop.data
-        nbit = a0.compr.crop.n_bits
-        # meta += a0.compr.crop.metadata
-        # tot += a0.compr.crop.data_tot
-        # printing('tot_step5:', tot*1e6/2**20)
-    elif hasattr(a0.compr,'pack'):
-        val = a0.compr.pack.data
-        nbit = a0.compr.pack.n_bits
-        # meta += a0.compr.pack.metadata
-        # tot += a0.compr.pack.data_tot
-        # printing('tot_step6:', tot*1e6/2**20)
-    else:
-        val = a0.compr.data
-        nbit = a0.compr.n_bits
-        # meta += a0.compr.metadata
-        # tot += a0.compr.data_tot
-        # printing('tot_step7:', tot*1e6/2**20)
-    printing('amount of compressed data + metadata at',nbit,'bits:',round(val*1e6/2**20,1), 'MiB,',round(val*1e6/2**20/a0.raw.n_datasets,1),'MiB per dataset')
+    if hasattr(a0,'compr'):
+        if hasattr(a0.compr,'crop'):
+            val = a0.compr.crop.data
+            nbit = a0.compr.crop.n_bits
+            printing('compressing time:',a0.compr.crop.end - a0.compr.crop.start)
+            # meta += a0.compr.crop.metadata
+            # tot += a0.compr.crop.data_tot
+            # printing('tot_step5:', tot*1e6/2**20)
+        elif hasattr(a0.compr,'pack'):
+            val = a0.compr.pack.data
+            nbit = a0.compr.pack.n_bits
+            printing('compressing time:',a0.compr.pack.end - a0.compr.pack.start)
+            # meta += a0.compr.pack.metadata
+            # tot += a0.compr.pack.data_tot
+            # printing('tot_step6:', tot*1e6/2**20)
+        else:
+            val = a0.compr.data
+            nbit = a0.compr.n_bits
+            printing('compressing time:',a0.compr.end - a0.compr.start)
+            # meta += a0.compr.metadata
+            # tot += a0.compr.data_tot
+            # printing('tot_step7:', tot*1e6/2**20)
+        printing('amount of compressed data + metadata at',nbit,'bits:',round(val*1e6/2**20,1), 'MiB,',round(val*1e6/2**20/a0.raw.n_datasets,1),'MiB per dataset')
+    
     printing('amount of metadata: ', meta, 'MiB')
     printing('amount of memory usage:',round((tot)*1e6/2**20,1), 'MiB')
-    
+    printing('')
     
 
 # from matplotlib import pyplot as plt
 
-def plot_tot(PHI,ylim=(0,250),xlim=None,figp=False):
+def plot_tot(PHI,ylim=(0,250),xlim=None,time_ord=False,figp=False):
     fig,ax = plt.subplots(1,2,figsize=(15,8),sharex=True,sharey=True)
     ax[0].set_ylabel('memory usage (GB)')
-
+    
     for axi, temp, i in zip(ax,[PHI.part1.history,PHI.part2.history],['1','2']):
         # plt.subplot(121)
         axi.set_title('Partition '+i)
-        
-        y0 = temp['occu']
-        y1 = temp['occu']
+        if time_ord:
+            s = np.argsort(temp['start'])
+        else:
+            s = np.arange(np.size(temp['start']))
+
+        y0 = np.asarray(temp['occu'])[s]
+        y1 = np.asarray(temp['occu'])[s]
 
         x = [None]*(len(y0)+len(y1))
         o = [None]*(len(y0)+len(y1))
         r = [None]*(len(y0)+len(y1))
         c = [None]*(len(y0)+len(y1))
         
-        x[::2] = temp['start']
-        x[1::2] = temp['end']; del x[1]
+        x[::2] = np.asarray(temp['start'])[s]
+        x[1::2] = np.asarray(temp['end'])[s]; del x[1]
         o[::2] = np.cumsum(y0)/1e3
         o[1::2] = np.cumsum(y1)/1e3; del o[-1]
-        r[::2] = np.cumsum(temp['raw'])/1e3
-        r[1::2] = np.cumsum(temp['raw'])/1e3; del r[-1]
-        c[::2] = np.cumsum(temp['compr'])/1e3
-        c[1::2] = np.cumsum(temp['compr'])/1e3; del c[-1]
+        r[::2] = np.cumsum(np.asarray(temp['raw'])[s])/1e3
+        r[1::2] = np.cumsum(np.asarray(temp['raw'])[s])/1e3; del r[-1]
+        c[::2] = np.cumsum(np.asarray(temp['compr'])[s])/1e3
+        c[1::2] = np.cumsum(np.asarray(temp['compr'])[s])/1e3; del c[-1]
         del y0, y1
 
         axi.plot_date(x,o,'ro-',label='total')
@@ -1238,7 +1260,7 @@ def plot_tot(PHI,ylim=(0,250),xlim=None,figp=False):
         axi.plot_date(x,c,color='orange',linestyle='-',marker='<',label='compressed')
         
         axi.grid()
-        axi.axhline(240,color='k',linestyle='--',linewidth=2)
+        axi.axhline(220,color='k',linestyle='--',linewidth=2) #240
         
         axi.set_ylim(ylim)
         if xlim is not None:
