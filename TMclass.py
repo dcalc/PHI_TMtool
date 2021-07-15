@@ -419,7 +419,6 @@ class PHI_MODE:
             s.crop_y = self.raw.Y
 
         s.cpu_time = datetime.timedelta(minutes=10) * s.crop_x * s.crop_y * s.n_outputs / 100663296 #TBD
-        s.end = s.start + s.cpu_time * s.this_run
         s.n_bits = nbits
             
         #MB of compressed data + metadata
@@ -430,6 +429,9 @@ class PHI_MODE:
         else:
             s.data = (round(s.crop_x*s.crop_y,0)*\
                                  s.n_bits / 8e6 * s.n_outputs + 0.7) * s.this_run
+        
+        s.flush_time = datetime.timedelta(seconds=s.data*8) # 1 Mbit/s
+        s.end = s.start + s.flush_time# + s.cpu_time * s.this_run
         
         s.data_tot += s.data
 
@@ -543,7 +545,7 @@ class PHI_MODE:
             #     s.n_datasets += s.this_run
             #     s.not_datasets = s.n_datasets - s.this_run
         
-        s.cpu_time = datetime.timedelta(seconds=80) * s.crop_x * s.crop_y * s.n_outputs / 100663296 #TBD
+        s.cpu_time = datetime.timedelta(seconds=80) * self.raw.X * self.raw.Y * s.n_outputs / 100663296 #TBD
         s.end = s.start + s.cpu_time * s.this_run
         
         # s.end = s.start + s.cpu_time * s.this_run
@@ -1026,7 +1028,7 @@ class PHI_MEMORY:
             raise ValueError('index must be 1 or 2')
         
         temp.history['start'] += [start]
-        temp.history['end'] += [start + datetime.timedelta(hours=1)] #TBD
+        temp.history['end'] += [start + datetime.timedelta(hours=3)] #TBD
         temp.history['type'] += [PHI_MEMORY.format_partition]
          
         temp.history['occu'] += [-temp.occu]
@@ -1198,21 +1200,24 @@ def printp(a0,label=None,gui=None):
         if hasattr(a0.compr,'crop'):
             val = a0.compr.crop.data
             nbit = a0.compr.crop.n_bits
-            printing('compressing time:',a0.compr.crop.end - a0.compr.crop.start)
+            printing('compressing (+ flushing) time:',a0.compr.crop.end - a0.compr.crop.start)
+            # printing('flushing time:',a0.compr.crop.flush_time)
             # meta += a0.compr.crop.metadata
             # tot += a0.compr.crop.data_tot
             # printing('tot_step5:', tot*1e6/2**20)
         elif hasattr(a0.compr,'pack'):
             val = a0.compr.pack.data
             nbit = a0.compr.pack.n_bits
-            printing('compressing time:',a0.compr.pack.end - a0.compr.pack.start)
+            printing('compressing (+ flushing) time:',a0.compr.pack.end - a0.compr.pack.start)
+            # printing('flushing time:',a0.compr.pack.flush_time)
             # meta += a0.compr.pack.metadata
             # tot += a0.compr.pack.data_tot
             # printing('tot_step6:', tot*1e6/2**20)
         else:
             val = a0.compr.data
             nbit = a0.compr.n_bits
-            printing('compressing time:',a0.compr.end - a0.compr.start)
+            printing('compressing (+ flushing) time:',a0.compr.end - a0.compr.start)
+            # printing('flushing time:',a0.compr.flush_time)
             # meta += a0.compr.metadata
             # tot += a0.compr.data_tot
             # printing('tot_step7:', tot*1e6/2**20)
