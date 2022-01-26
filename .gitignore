@@ -3,3 +3,11 @@ TM_NMP1_v0.ipynb
 .ipynb_checkpoints
 __pycache__
 TM_RSW123_v1.ipynb
+TM_NMP1_v1.ipynb
+*.csv
+TM_NMP1_v2.ipynb
+TM_streamlit.pyc
+*.itl
+TM_RSW123_v1.ipynb
+TM_RSW123_v1.1.ipynb
+orbit2_details.txt
