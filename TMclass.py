@@ -219,7 +219,7 @@ class PHI_MODE:
             s.start = start
             if ndata == -1:
                 s.n_outputs = nout
-                s.this_run = temp.n_datasets - self.proc.n_datasets
+                s.this_run = temp.n_datasets - s.n_datasets
                 s.n_datasets = temp.n_datasets
                 s.not_datasets = 0
             elif ndata <= s.not_datasets:
@@ -371,7 +371,7 @@ class PHI_MODE:
             s.n_outputs = temp.n_outputs
             max_data = temp.n_datasets - s.n_datasets
             if ndata == -1:
-                s.this_run = temp.n_datasets - self.proc.n_datasets
+                s.this_run = temp.n_datasets - s.n_datasets
                 s.n_datasets = temp.n_datasets
                 s.not_datasets = 0
             elif ndata <= max_data:
