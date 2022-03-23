@@ -217,19 +217,20 @@ class PHI_MODE:
                 else:
                     raise ValueError ('level not accepted (only raw and raw.crop)')
             s.start = start
+            max_data = temp.n_datasets - s.n_datasets
             if ndata == -1:
                 s.n_outputs = nout
-                s.this_run = temp.n_datasets - s.n_datasets
+                s.this_run = max_data
                 s.n_datasets = temp.n_datasets
                 s.not_datasets = 0
-            elif ndata <= s.not_datasets:
+            elif ndata <= max_data:
                 s.n_datasets += ndata
                 s.not_datasets -= ndata
                 s.this_run = ndata
-            elif ndata > s.not_datasets:
+            elif ndata > max_data:
                 s.this_run = temp.n_datasets - s.n_datasets
-                print(f'Exceeding the number of datasets, ndata set to {temp.n_datasets - s.n_datasets}')
-                s.n_datasets = temp.n_datasets
+                print(f'Exceeding the number of datasets, ndata set to {max_data}')
+                s.n_datasets = max_data
                 s.not_datasets = 0
             # elif type(ndata) == datetime.datetime:
             #     s.end = ndata
@@ -333,7 +334,16 @@ class PHI_MODE:
             
             if not '.' in level:
                 temp = getattr(self,level)
-                s = self.compr
+                try:
+                    s = self.compr
+                    n = s.n_datasets
+                except:
+                    # self.compr = COMPR()
+                    s = self.compr
+                    s.n_datasets = 0
+                    s.not_datasets = temp.n_datasets
+                    s.data_tot = 0
+                    s.n_datasets = 0
             else:
                 level = level.split('.')
                 temp = self
