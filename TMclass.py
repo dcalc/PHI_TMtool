@@ -214,6 +214,7 @@ class PHI_MODE:
                         s.data_tot = 0
                         s.n_datasets = 0
                         s.n_outputs = nout
+                        s.time = datetime.timedelta(seconds=0)
                 else:
                     raise ValueError ('level not accepted (only raw and raw.crop)')
             s.start = start
@@ -261,6 +262,7 @@ class PHI_MODE:
             s.interm_data_tot = 0
             s.data_tot = 0
             s.n_datasets = 0
+            s.time = datetime.timedelta(seconds=0)
             if ndata == -1:
                 s.this_run = temp.n_datasets
                 s.n_datasets = temp.n_datasets
@@ -281,6 +283,7 @@ class PHI_MODE:
             #     s.not_datasets = temp.n_datasets - s.this_run
         
         s.end = s.start + s.cpu_time * s.this_run
+        s.time += s.end - s.start
         # intermediate processing steps
         if partialStore == 0x00:
             s.interm_steps = 1
@@ -360,6 +363,7 @@ class PHI_MODE:
                         # s.cpu_time = datetime.timedelta(minutes=1) #TBD
                         s.data_tot = 0
                         s.n_datasets = 0
+                        s.time = datetime.timedelta(seconds=0)
                         
                 elif level[-1] == 'pack':
                     try:
@@ -372,6 +376,7 @@ class PHI_MODE:
                         # s.cpu_time = datetime.timedelta(minutes=1) #TBD
                         s.data_tot = 0
                         s.n_datasets = 0
+                        s.time = datetime.timedelta(seconds=0)
                 else:
                     raise ValueError ('level not accepted')
 
@@ -426,6 +431,7 @@ class PHI_MODE:
             # s.cpu_time = datetime.timedelta(minutes=1) #TBD
             s.data_tot = 0
             s.n_datasets = 0
+            s.time = datetime.timedelta(seconds=0)
             if ndata == -1:
                 s.this_run = temp.n_datasets
                 s.n_datasets = temp.n_datasets
@@ -477,7 +483,7 @@ class PHI_MODE:
         # else:
         s.flush_time = datetime.timedelta(seconds=s.data*8) # 1 Mbit/s
         s.end = s.start + s.flush_time# + s.cpu_time * s.this_run
-        
+        s.time += s.end - s.start
         s.data_tot += s.data
 
         return {'tm_type':COMPR, 'val':s.data,\
@@ -571,6 +577,7 @@ class PHI_MODE:
             s.n_outputs = temp.n_outputs
             s.data_tot = 0
             s.n_datasets = 0
+            s.time = datetime.timedelta(seconds=0)
             if ndata == -1:
                 s.this_run = temp.n_datasets
                 s.n_datasets = temp.n_datasets
@@ -594,6 +601,7 @@ class PHI_MODE:
         s.cpu_time = datetime.timedelta(seconds=self.raw.n_bits * self.raw.X * self.raw.Y * s.n_outputs / 8 / 2**20 * 0.117 + 22.054) # Operations / ProcessingDuration
 
         s.end = s.start + s.cpu_time * s.this_run
+        s.time += s.end - s.start
         
         # s.end = s.start + s.cpu_time * s.this_run
         
@@ -690,6 +698,7 @@ class PHI_MODE:
             s.n_outputs = temp.n_outputs
             s.data_tot = 0
             s.n_datasets = 0
+            s.time = datetime.timedelta(seconds=0)
             if ndata == -1:
                 s.this_run = temp.n_datasets
                 s.n_datasets = temp.n_datasets
@@ -720,7 +729,8 @@ class PHI_MODE:
         # s.cpu_time = datetime.timedelta(seconds=120) * s.crop_x * s.crop_y * s.n_outputs / 100663296 #TBD JH dice 120s per stare sicuri da FCP_709
         s.cpu_time = datetime.timedelta(seconds = self.raw.n_bits * s.crop_x * s.crop_y * s.n_outputs / 8 / 2**20 * 0.1471 + 27.32) # Operations / ProcessingDuration
         s.end = s.start + s.cpu_time * s.this_run
-                
+        s.time += s.end - s.start
+        
         #MB of packed data + metadata
         
         if 'raw' in level:
@@ -1215,7 +1225,7 @@ def printp(a0,label=None,gui=None):
               'MiB,',round(val*1e6/2**20/a0.raw.n_datasets,1),'MiB per dataset')
         meta += a0.raw.crop.metadata
         tot += a0.raw.crop.data_tot
-        printing('cropping time:',a0.raw.crop.end - a0.raw.crop.start)
+        printing('cropping time:',a0.raw.crop.time)
         
     
     if hasattr(a0.raw,'pack'):
@@ -1224,23 +1234,23 @@ def printp(a0,label=None,gui=None):
               'MiB,',round(val*1e6/2**20/a0.raw.n_datasets,1),'MiB per dataset')
         meta += a0.raw.pack.metadata
         tot += a0.raw.pack.data_tot
-        printing('packing time:',a0.raw.pack.end - a0.raw.pack.start)
+        printing('packing time:',a0.raw.pack.time)
 
     if hasattr(a0,'proc'):
         if hasattr(a0.proc,'crop'):
-            val = a0.proc.crop.data_tot + a0.proc.crop.interm_data
+            val = a0.proc.crop.data_tot + a0.proc.crop.interm_data_tot
             val_d = a0.proc.crop.data_tot
             nbit = a0.proc.crop.n_bits
             meta += a0.proc.crop.metadata
             tot += a0.proc.crop.data_tot + a0.proc.crop.interm_data_tot
-            printing('processing time:',a0.proc.crop.end - a0.proc.crop.start)
+            printing('processing time:',a0.proc.crop.time)
         else:
-            val = a0.proc.data_tot + a0.proc.interm_data
+            val = a0.proc.data_tot + a0.proc.interm_data_tot
             val_d = a0.proc.data_tot
             nbit = a0.proc.n_bits
             meta += a0.proc.metadata
             tot += a0.proc.data_tot + a0.proc.interm_data_tot
-            printing('processing time:',a0.proc.end - a0.proc.start)
+            printing('processing time:',a0.proc.time)
 
         printing('amount of processed data (and intermediate data) at',nbit,'bits:',round(val*1e6/2**20,1), 'MiB,',round(val_d*1e6/2**20/a0.raw.n_datasets,1),'MiB per dataset')
     
@@ -1249,7 +1259,7 @@ def printp(a0,label=None,gui=None):
             val = a0.compr.crop.data_tot
             nbit = a0.compr.crop.n_bits
             ndata = a0.compr.crop.n_datasets
-            printing('compressing (+ flushing) time:',a0.compr.crop.end - a0.compr.crop.start)
+            printing('compressing (+ flushing) time:',a0.compr.crop.time)
             # printing('flushing time:',a0.compr.crop.flush_time)
             # meta += a0.compr.crop.metadata
             # tot += a0.compr.crop.data_tot
@@ -1258,7 +1268,7 @@ def printp(a0,label=None,gui=None):
             val = a0.compr.pack.data_tot
             nbit = a0.compr.pack.n_bits
             ndata = a0.compr.pack.n_datasets
-            printing('compressing (+ flushing) time:',a0.compr.pack.end - a0.compr.pack.start)
+            printing('compressing (+ flushing) time:',a0.compr.pack.time)
             # printing('flushing time:',a0.compr.pack.flush_time)
             # meta += a0.compr.pack.metadata
             # tot += a0.compr.pack.data_tot
@@ -1267,7 +1277,7 @@ def printp(a0,label=None,gui=None):
             val = a0.compr.data_tot
             nbit = a0.compr.n_bits
             ndata = a0.compr.n_datasets
-            printing('compressing (+ flushing) time:',a0.compr.end - a0.compr.start)
+            printing('compressing (+ flushing) time:',a0.compr.time)
             # printing('flushing time:',a0.compr.flush_time)
             # meta += a0.compr.metadata
             # tot += a0.compr.data_tot
@@ -1457,7 +1467,7 @@ def final_plot(PHI,TM):
     z = TM['duration'][np.logical_and(TM['date'] <= endtime+datetime.timedelta(days=1),TM['date'] >= starttime-datetime.timedelta(days=1))]
 
     xx = [(i - starttime).total_seconds() for i in x]
-    f = interp1d(xx, y*z)
+    f = interp1d(xx, y*z,fill_value="extrapolate")
     xnew = [(i - starttime.date()).total_seconds() for i in times]
     ynew = f(xnew)/8e9
     ynew[times<datetime.date(2022,4,1)] *= .2
