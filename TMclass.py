@@ -1291,7 +1291,7 @@ def printp(a0,label=None,gui=None):
 
 # from matplotlib import pyplot as plt
 
-def plot_tot(PHI,ylim=(0,250),xlim=None,time_ord=False,figp=False):
+def plot_tot(PHI,ylim=(0,250),xlim=None,time_ord=True,figp=False):
     fig,ax = plt.subplots(1,2,figsize=(15,8),sharex=True,sharey=True)
     ax[0].set_ylabel('memory usage (GB)')
     
