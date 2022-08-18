@@ -230,7 +230,7 @@ class PHI_MODE:
                 s.this_run = ndata
             elif ndata > max_data:
                 s.this_run = temp.n_datasets - s.n_datasets
-                print(f'Exceeding the number of datasets, ndata set to {max_data}')
+                print(s.start,f'Exceeding the number of datasets, ndata set to {max_data}')
                 s.n_datasets = max_data
                 s.not_datasets = 0
             # elif type(ndata) == datetime.datetime:
@@ -272,7 +272,7 @@ class PHI_MODE:
                 s.n_datasets = ndata
                 s.not_datasets = temp.n_datasets - ndata
             elif ndata > temp.n_datasets:
-                print(f'Exceeding the number of datasets, ndata set to {temp.n_datasets}')
+                print(s.start,f'Exceeding the number of datasets, ndata set to {temp.n_datasets}')
                 s.n_datasets = temp.n_datasets
                 s.this_run = temp.n_datasets
                 s.not_datasets = 0
@@ -395,7 +395,7 @@ class PHI_MODE:
                 s.this_run = ndata
             elif ndata > max_data:
                 s.this_run = max_data
-                print(f'Exceeding the number of datasets, ndata set to {max_data}')
+                print(s.start,f'Exceeding the number of datasets, ndata set to {max_data}')
                 s.n_datasets = temp.n_datasets
                 s.not_datasets = 0
             # elif type(ndata) == datetime.datetime:
@@ -441,7 +441,7 @@ class PHI_MODE:
                 s.n_datasets = ndata
                 s.not_datasets = temp.n_datasets - ndata
             elif ndata > temp.n_datasets:
-                print(f'Exceeding the number of datasets, ndata set to {temp.n_datasets}')
+                print(s.start,f'Exceeding the number of datasets, ndata set to {temp.n_datasets}')
                 s.n_datasets = temp.n_datasets
                 s.this_run = temp.n_datasets
                 s.not_datasets = 0
@@ -547,7 +547,7 @@ class PHI_MODE:
                 s.n_datasets += ndata
                 s.not_datasets = s.n_datasets - ndata
             elif ndata > max_data:
-                print(f'Exceeding the number of datasets, ndata set to {max_data}')
+                print(s.start,f'Exceeding the number of datasets, ndata set to {max_data}')
                 s.n_datasets = temp.n_datasets
                 s.this_run = max_data
                 s.not_datasets = 0
@@ -587,7 +587,7 @@ class PHI_MODE:
                 s.n_datasets = ndata
                 s.not_datasets = s.n_datasets - ndata
             elif ndata > temp.n_datasets:
-                print(f'Exceeding the number of datasets, ndata set to {temp.n_datasets}')
+                print(s.start,f'Exceeding the number of datasets, ndata set to {temp.n_datasets}')
                 s.n_datasets = temp.n_datasets
                 s.this_run = temp.n_datasets
                 s.not_datasets = 0
@@ -670,7 +670,7 @@ class PHI_MODE:
                 s.n_datasets += ndata
                 s.not_datasets = s.n_datasets - ndata
             elif ndata > max_data:
-                print(f'Exceeding the number of datasets, ndata set to {max_data}')
+                print(s.start,f'Exceeding the number of datasets, ndata set to {max_data}')
                 s.n_datasets = temp.n_datasets
                 s.this_run = max_data
                 s.not_datasets = 0
@@ -708,7 +708,7 @@ class PHI_MODE:
                 s.n_datasets = ndata
                 s.not_datasets = s.n_datasets - ndata
             elif ndata > temp.n_datasets:
-                print(f'Exceeding the number of datasets, ndata set to {temp.n_datasets}')
+                print(s.start,f'Exceeding the number of datasets, ndata set to {temp.n_datasets}')
                 s.n_datasets = temp.n_datasets
                 s.this_run = temp.n_datasets
                 s.not_datasets = 0
