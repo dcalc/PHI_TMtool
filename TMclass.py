@@ -286,7 +286,7 @@ class PHI_MODE:
         s.time += s.end - s.start
         # intermediate processing steps
         if partialStore == 0x00:
-            s.interm_steps = 1
+            s.interm_steps = 0 # updated with S/W update in September 2022
         if partialStore == 0xFF:
             s.interm_steps = 5
         s.interm_n_bits = 32
