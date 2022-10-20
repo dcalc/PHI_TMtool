@@ -229,10 +229,13 @@ class PHI_MODE:
                 s.not_datasets -= ndata
                 s.this_run = ndata
             elif ndata > max_data:
-                s.this_run = temp.n_datasets - s.n_datasets
-                print(s.start,f'Exceeding the number of datasets, ndata set to {max_data}')
-                s.n_datasets = max_data
-                s.not_datasets = 0
+                # s.this_run = temp.n_datasets - s.n_datasets
+                print(s.start,f'WARNING: Processing, Exceeding the number of datasets, max should be {max_data}')
+                # s.n_datasets = max_data
+                # s.not_datasets -= ndata
+                s.n_datasets += ndata
+                s.not_datasets -= ndata
+                s.this_run = ndata
             # elif type(ndata) == datetime.datetime:
             #     s.end = ndata
             #     s.this_run = min(s.not_datasets,int(ndata-start)/s.cpu_time)
@@ -272,10 +275,13 @@ class PHI_MODE:
                 s.n_datasets = ndata
                 s.not_datasets = temp.n_datasets - ndata
             elif ndata > temp.n_datasets:
-                print(s.start,f'Exceeding the number of datasets, ndata set to {temp.n_datasets}')
-                s.n_datasets = temp.n_datasets
-                s.this_run = temp.n_datasets
-                s.not_datasets = 0
+                print(s.start,f'WARNING: Processing, Exceeding the number of datasets, max should be {temp.n_datasets}')
+                # s.n_datasets = temp.n_datasets
+                # s.this_run = temp.n_datasets
+                # s.not_datasets = temp.n_datasets - ndata
+                s.this_run = ndata
+                s.n_datasets = ndata
+                s.not_datasets = temp.n_datasets - ndata
             # elif type(ndata) == datetime.datetime:
             #     s.end = ndata
             #     s.this_run = min(temp.n_datasets,int(ndata-start)/s.cpu_time)
@@ -394,10 +400,13 @@ class PHI_MODE:
                 s.not_datasets -= ndata
                 s.this_run = ndata
             elif ndata > max_data:
-                s.this_run = max_data
-                print(s.start,f'Exceeding the number of datasets, ndata set to {max_data}')
-                s.n_datasets = temp.n_datasets
-                s.not_datasets = 0
+                # s.this_run = max_data
+                print(s.start,f'WARNING: Compression: Exceeding the number of datasets, max should be {max_data}')
+                # s.n_datasets = temp.n_datasets
+                # s.not_datasets -= ndata
+                s.n_datasets += ndata
+                s.not_datasets -= ndata
+                s.this_run = ndata
             # elif type(ndata) == datetime.datetime:
             #     s.end = ndata
             #     s.this_run = min(s.not_datasets,int(ndata-start)/s.cpu_time)
@@ -441,10 +450,13 @@ class PHI_MODE:
                 s.n_datasets = ndata
                 s.not_datasets = temp.n_datasets - ndata
             elif ndata > temp.n_datasets:
-                print(s.start,f'Exceeding the number of datasets, ndata set to {temp.n_datasets}')
-                s.n_datasets = temp.n_datasets
-                s.this_run = temp.n_datasets
-                s.not_datasets = 0
+                print(s.start,f'WARNING: Compression: Exceeding the number of datasets, max should be {temp.n_datasets}')
+                # s.n_datasets = temp.n_datasets
+                # s.this_run = temp.n_datasets
+                # s.not_datasets = temp.n_datasets - ndata
+                s.this_run = ndata
+                s.n_datasets = ndata
+                s.not_datasets = temp.n_datasets - ndata
             # elif type(ndata) == datetime.datetime:
             #     s.end = ndata
             #     s.this_run = min(temp.n_datasets,int(ndata-start)/s.cpu_time)
@@ -545,12 +557,15 @@ class PHI_MODE:
             elif ndata <= max_data:
                 s.this_run = ndata
                 s.n_datasets += ndata
-                s.not_datasets = s.n_datasets - ndata
+                s.not_datasets -= ndata
             elif ndata > max_data:
-                print(s.start,f'Exceeding the number of datasets, ndata set to {max_data}')
-                s.n_datasets = temp.n_datasets
-                s.this_run = max_data
-                s.not_datasets = 0
+                print(s.start,f'WARNING: Cropping: Exceeding the number of datasets, max should be {max_data}')
+                # s.n_datasets = temp.n_datasets
+                # s.this_run = max_data
+                # s.not_datasets -= ndata
+                s.this_run = ndata
+                s.n_datasets += ndata
+                s.not_datasets -= ndata
             # elif type(ndata) == datetime.datetime:
             #     s.end = ndata
             #     s.this_run = min(temp.n_datasets,int(ndata-start)/s.cpu_time)
@@ -587,10 +602,13 @@ class PHI_MODE:
                 s.n_datasets = ndata
                 s.not_datasets = s.n_datasets - ndata
             elif ndata > temp.n_datasets:
-                print(s.start,f'Exceeding the number of datasets, ndata set to {temp.n_datasets}')
-                s.n_datasets = temp.n_datasets
-                s.this_run = temp.n_datasets
-                s.not_datasets = 0
+                print(s.start,f'WARNING: Cropping: Exceeding the number of datasets, max should be {temp.n_datasets}')
+                # s.n_datasets = temp.n_datasets
+                # s.this_run = temp.n_datasets
+                # s.not_datasets = s.n_datasets - ndata
+                s.this_run = ndata
+                s.n_datasets = ndata
+                s.not_datasets = s.n_datasets - ndata
             # elif type(ndata) == datetime.datetime:
             #     s.end = ndata
             #     s.this_run = min(temp.n_datasets,int(ndata-start)/s.cpu_time)
@@ -668,12 +686,15 @@ class PHI_MODE:
             elif ndata <= max_data:
                 s.this_run = ndata
                 s.n_datasets += ndata
-                s.not_datasets = s.n_datasets - ndata
+                s.not_datasets -= ndata
             elif ndata > max_data:
-                print(s.start,f'Exceeding the number of datasets, ndata set to {max_data}')
-                s.n_datasets = temp.n_datasets
-                s.this_run = max_data
-                s.not_datasets = 0
+                print(s.start,f'WARNING: Packing: Exceeding the number of datasets, should be {temp.n_datasets}')
+                # s.n_datasets = temp.n_datasets
+                # s.this_run = max_data
+                # s.not_datasets -= ndata
+                s.this_run = ndata
+                s.n_datasets += ndata
+                s.not_datasets -= ndata
             # elif type(ndata) == datetime.datetime:
             #     s.end = ndata
             #     s.this_run = min(temp.n_datasets,int(ndata-start)/s.cpu_time)
@@ -708,10 +729,13 @@ class PHI_MODE:
                 s.n_datasets = ndata
                 s.not_datasets = s.n_datasets - ndata
             elif ndata > temp.n_datasets:
-                print(s.start,f'Exceeding the number of datasets, ndata set to {temp.n_datasets}')
-                s.n_datasets = temp.n_datasets
-                s.this_run = temp.n_datasets
-                s.not_datasets = 0
+                print(s.start,f'WARNING: Packing: Exceeding the number of datasets, should be {temp.n_datasets}')
+                # s.n_datasets = temp.n_datasets
+                # s.this_run = temp.n_datasets
+                # s.not_datasets = s.n_datasets - ndata
+                s.this_run = ndata
+                s.n_datasets = ndata
+                s.not_datasets = s.n_datasets - ndata
             # elif type(ndata) == datetime.datetime:
             #     s.end = ndata
             #     s.this_run = min(temp.n_datasets,int(ndata-start)/s.cpu_time)
