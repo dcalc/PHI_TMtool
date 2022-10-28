@@ -15,3 +15,5 @@ orbit2_test.ipynb
 stp/
 stp/*
 *.yaml
+validator/
+validator/*

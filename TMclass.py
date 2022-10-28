@@ -5,13 +5,21 @@ import pickle
 import os
 import pandas as pd
 import base64
+import copy
 
-__all__ = ['PHI_MEMORY', 'PARTITION', 'RAW','PROC','CROP','PACK','COMPR','PHI_MODE','CAL','FLUSH',\
-            'roundup','plot_tot','printp','final_plot']
+__all__ = ['PHI_MEMORY', 'PARTITION', 'RAW','PROC','CROP','PACK','COMPR','BIN','EXTR','PHI_MODE',\
+            'roundup','plot_tot','printp','final_plot', 'levels_did_out']
 
 
 def roundup(x,base=8):
     return round(x) if x % base == 0 else round(x + base - x % base)
+
+def _no_class(s,attr):
+    t = type(getattr(s,attr))
+    if t in [RAW,PROC,CROP,PACK,COMPR,EXTR,PHI_MODE,PARTITION,PHI_MEMORY]:
+        return False
+    else:
+        return True
 
 class PARTITION:
     # __all__ = ['total','free','occu','raw','proc','compr','crop','pack','cal','flush','history']
@@ -33,6 +41,31 @@ class RAW:
         
     pass
 class PROC:
+
+    def __init__(self,temp,level,did=None):
+        
+        # temp is the sublevel
+        for k, v in temp.__dict__.items():
+            if _no_class(temp,k):
+                self.__dict__[k] = copy.deepcopy(v)
+        
+        self.level = level+'.proc'
+        if did is None:
+            start_did = int(temp.did)
+            self.did  = str(start_did + 7000).rjust(10,'0')
+        else:
+            self.did = did
+        self.n_datasets = 0
+        self.not_datasets = temp.n_datasets
+        self.cpu_time = datetime.timedelta(minutes=35) # update 20211015 info by JH and Nestor
+        self.interm_data_tot = 0
+        self.time = datetime.timedelta(seconds=0)
+        self.start = None
+        self.end = None
+        self.metadata = 0
+        self.data = 0
+        self.data_tot = 0
+
     def __call__(self):
         print(f'Variable info: ')
         print(f'Variable type: {type(self)}')
@@ -50,6 +83,35 @@ class PROC:
         
     pass
 class COMPR:
+
+    def __init__(self,temp,level):
+        
+        # temp is the sublevel
+        for k, v in temp.__dict__.items():
+            if _no_class(temp,k):
+                self.__dict__[k] = copy.deepcopy(v)
+        
+        self.level = level+'.compr'
+        self.n_datasets = 0
+        self.not_datasets = temp.n_datasets
+        self.cpu_time = datetime.timedelta(minutes=35) # update 20211015 info by JH and Nestor
+        self.interm_data_tot = 0
+        self.data_tot = 0
+        self.n_datasets = 0
+        self.time = datetime.timedelta(seconds=0)
+        self.n_outputs = temp.n_outputs
+        self.start = None
+        self.end = None
+        self.time = datetime.timedelta(0)
+        self.cpu_time = 0
+        self.metadata = 0
+        self.data = 0
+        self.data_tot = 0
+
+    def _compute_cpu_time(self):
+        # self.cpu_time = datetime.timedelta(minutes=10) * self.X * self.Y * self.n_outputs / 100663296 #TBD
+        self.cpu_time = datetime.timedelta(seconds=(self.data+self.metadata)*8) # 1 Mbit/s
+        
     def __call__(self):
         print(f'Variable info: ')
         print(f'Variable type: {type(self)}')
@@ -64,25 +126,92 @@ class COMPR:
         print(f'Compressed data+metadata size: {self.data_tot} MB')
         
     pass
-class FLUSH:
-    def __call__(self):
-        print(f'Variable info: ')
-        print(f'Variable type: {type(self)}')
-        print(f'Start date: {self.start}')
-        print(f'End date: {self.end}')
-        print(f'Amount of data to be flushed: {self.data} MB')
-        
-    pass
-class CAL:
-    def __call__(self):
-        print(f'Variable info: ')
-        print(f'Variable type: {type(self)}')
-        print(f'Start date: {self.start}')
-        print(f'End date: {self.end}')
-        print(f'Amount of calibration data: {self.data} MB')
-        
-    pass
+
+
 class CROP:
+
+    def __init__(self,temp,level,did=None):
+        
+        # temp is the sublevel
+        for k, v in temp.__dict__.items():
+            if _no_class(temp,k):
+                self.__dict__[k] = copy.deepcopy(v)
+        
+        if did is None:
+            start_did = int(temp.did)
+            self.did  = str(start_did + 500).rjust(10,'0')
+        else:
+            self.did = did
+        
+        self.n_datasets = 0
+        self.not_datasets = temp.n_datasets
+        self.interm_data_tot = 0
+        self.data_tot = 0
+        self.n_datasets = 0
+        self.time = datetime.timedelta(seconds=0)
+        self.n_outputs = temp.n_outputs
+        self.level = level+'.crop'
+        self.start = None
+        self.end = None
+        self.time = datetime.timedelta(0)
+        self.cpu_time = 0
+        self.metadata = 0
+        self.data = 0
+        self.data_tot = 0
+        
+    def _compute_cpu_time(self,temp):
+        # self.cpu_time = datetime.timedelta(seconds=temp.n_bits * temp.X * temp.Y * self.n_outputs / 8 / 2**20 * 0.117 + 22.054) # Operations / ProcessingDuration
+        if self.Y > 1024:
+            self.cpu_time = datetime.timedelta(seconds=70)
+        else:
+            self.cpu_time = datetime.timedelta(seconds=35)
+
+    def __call__(self):
+        print(f'Variable info: ')
+        print(f'Variable type: {type(self)}')
+        print(f'Start date: {self.start}')
+        print(f'End date: {self.end}')
+        print(f'Cropping time per data: {self.cpu_time} mins')
+        print(f'X crop factor: {self.crop_x}')
+        print(f'Y crop factor: {self.crop_y}')
+        print(f'Number of outputs: {self.n_outputs}')
+        print(f'Bit depth: {self.n_bits}')
+        print(f'Number of cropped datasets: {self.n_datasets}')
+        print(f'Cropped data+metadata size: {self.data_tot} MB')
+        
+    pass
+
+class BIN:
+
+    def __init__(self,temp,level,did=None):
+        
+        # temp is the sublevel
+        for k, v in temp.__dict__.items():
+            if _no_class(temp,k):
+                self.__dict__[k] = copy.deepcopy(v)
+        
+        if did is None:
+            start_did = int(temp.did)
+            self.did  = str(start_did + 400).rjust(10,'0')
+        else:
+            self.did = did
+        
+        self.n_datasets = 0
+        self.not_datasets = temp.n_datasets
+        self.interm_data_tot = 0
+        self.data_tot = 0
+        self.n_datasets = 0
+        self.time = datetime.timedelta(seconds=0)
+        self.n_outputs = temp.n_outputs
+        self.level = level+'.bin'
+        self.start = None
+        self.end = None
+        self.cpu_time = datetime.timedelta(seconds=60)
+        self.metadata = 0
+        self.data = 0
+        self.data_tot = 0
+        self.bin_factor = 1
+        
     def __call__(self):
         print(f'Variable info: ')
         print(f'Variable type: {type(self)}')
@@ -98,6 +227,41 @@ class CROP:
         
     pass
 class PACK:
+
+    def __init__(self,temp,level,did=None):
+        
+        for k, v in temp.__dict__.items():
+            if _no_class(temp,k):
+                self.__dict__[k] = copy.deepcopy(v)
+        
+        if did is None:
+            start_did = int(temp.did)
+            self.did  = str(start_did + 40000000).rjust(10,'0')
+        else:
+            self.did = did
+        
+        self.n_datasets = 0
+        self.not_datasets = temp.n_datasets
+        self.interm_data_tot = 0
+        self.data_tot = 0
+        self.n_datasets = 0
+        self.time = datetime.timedelta(seconds=0)
+        self.n_outputs = temp.n_outputs
+        self.level = level+'.pack'
+        self.start = None
+        self.end = None
+        self.cpu_time = 0
+        self.metadata = 0
+        self.data = 0
+        self.data_tot = 0
+
+    def _compute_cpu_time(self,temp):
+        # self.cpu_time = datetime.timedelta(seconds = temp.n_bits * self.X * self.Y * self.n_outputs / 8 / 2**20 * 0.1471 + 27.32) # Operations / ProcessingDuration
+        if self.Y > 1024:
+            self.cpu_time = datetime.timedelta(seconds=90)
+        else:
+            self.cpu_time = datetime.timedelta(seconds=45)
+    
     def __call__(self):
         print(f'Variable info: ')
         print(f'Variable type: {type(self)}')
@@ -113,7 +277,74 @@ class PACK:
         
     pass
 
-class PHI_MODE:
+class EXTR:
+
+    def __init__(self,temp,level,did=None):
+        
+        for k, v in temp.__dict__.items():
+            if _no_class(temp,k):
+                self.__dict__[k] = copy.deepcopy(v)
+        
+        if did is None:
+            start_did = int(temp.did)
+            self.did  = str(start_did + 200).rjust(10,'0')
+        else:
+            self.did = did
+        
+        self.n_datasets = 0
+        self.not_datasets = temp.n_datasets
+        self.interm_data_tot = 0
+        self.data_tot = 0
+        self.time = datetime.timedelta(seconds=0)
+        self.n_outputs = 1
+        self.level = level+'.extr'
+        self.start = None
+        self.end = None
+        self.cpu_time = datetime.timedelta(seconds=120)
+        self.metadata = 0
+        self.data = 0
+        
+
+    def __call__(self):
+        print(f'Variable info: ')
+        print(f'Variable type: {type(self)}')
+        print(f'Start date: {self.start}')
+        print(f'End date: {self.end}')
+        print(f'Packing time per data: {self.cpu_time} mins')
+        print(f'X crop factor: {self.crop_x}')
+        print(f'Y crop factor: {self.crop_y}')
+        print(f'Number of outputs: {self.n_outputs}')
+        print(f'Bit depth: {self.n_bits}')
+        print(f'Number of packed datasets: {self.n_datasets}')
+        print(f'Packed data+metadata size: {self.data_tot} MB')
+        
+    pass
+
+def levels_did_out(phi_mode):
+    def find_levels(s):
+        levels = []
+        t = []
+        
+        for k, v in s.__dict__.items():
+            if k in ['raw','crop','bin','pack','extr','proc','compr']:
+                t += [getattr(s,k)]
+                levels += [t[-1].level]
+        return levels, t
+
+    levels = []
+    temp = [[]]
+    temp[0] += [phi_mode]
+    i = 0
+    while temp[i] != []:
+        i += 1
+        temp += [[]]
+        for t in temp[i-1]:
+            l,tt = find_levels(t); levels += l; temp[i] += tt;
+        
+    # temp = temp[:-1]
+    temp = [t for tt in temp[1:] for t in tt]
+    return levels, [t.did for t in temp], [t.n_datasets for t in temp]
+class PHI_MODE():
     def __init__(self,mode):
         self.mode = mode
         if not mode in ['HRT','FDT','CAL','FLUSH']:
@@ -126,11 +357,43 @@ class PHI_MODE:
         else:
             raise ValueError(f'This function is not implemented for mode {self.mode}\nYou should use one of these modes: {req}')
     
+    def _set_n_datasets(self,s,temp,ndata,procedure,verbose=True):
+        diff = temp.n_datasets - (s.n_datasets + s.not_datasets)
+        if diff > 0:
+            # check if new operations have increased the number of datasets in the parent level
+            s.not_datasets += diff
+        if ndata == -1:
+            s.this_run = s.not_datasets
+            s.n_datasets = temp.n_datasets
+            s.not_datasets = 0
+        elif ndata <= s.not_datasets:
+            s.this_run = ndata
+            s.n_datasets += ndata
+            s.not_datasets -= ndata
+        elif ndata > s.not_datasets:
+            if procedure != 'Extraction' and verbose:
+                print(s.start,f'WARNING: '+procedure+', Exceeding the number of datasets, max should be '+str(s.not_datasets))
+            # s.n_datasets = temp.n_datasets
+            # s.this_run = temp.n_datasets
+            # s.not_datasets = temp.n_datasets - ndata
+            # s.this_run = ndata
+            # s.n_datasets = ndata
+            # s.not_datasets = temp.n_datasets - ndata
+            s.n_datasets += ndata
+            s.not_datasets -= ndata
+            s.this_run = ndata
+
+    def level_out(self,level):
+        temp = self
+        for l in level.split("."):
+            temp = getattr(temp,l)
+        return temp
+        
     #############################################################################
     #############################################################################
     #############################################################################
         
-    def observation(self,start,end,cadence,shape=(2048,2048,4,6)):
+    def observation(self,start,end,cadence,shape=(2048,2048,4,6),did='0000000000'):
 #         class RAW:
 #             pass
         self.__checkMode__(['HRT','FDT'])
@@ -158,6 +421,8 @@ class PHI_MODE:
 
         else:
             self.raw = RAW()
+            self.raw.level = 'raw'
+            self.raw.did = did
             self.raw.cadence = cadence
             self.raw.start = start
 
@@ -188,106 +453,31 @@ class PHI_MODE:
     #############################################################################
     #############################################################################
     
-    def processing(self,start,ndata=-1,partialStore=0x00,nout=5,level='raw'):
+    def processing(self,start,ndata=-1,partialStore=0x00,nout=5,level='raw',did = None, verbose=True):
         self.__checkMode__(['HRT','FDT'])
-                 
-            
-        if hasattr(self,'proc'):
-            if not '.' in level:
-                temp = getattr(self,level)
-                s = self.proc
-            else:
-                level = level.split('.')
-                temp = self
-                for l in level:
-                    temp = getattr(temp,l)
-                if level[-1] == 'crop':
-                    try:
-                        s = self.proc.crop
-                    except:
-                        self.proc.crop = CROP()
-                        s = self.proc.crop
-                        s.n_datasets = 0
-                        s.not_datasets = temp.n_datasets
-                        s.cpu_time = datetime.timedelta(minutes=60) #TBD
-                        s.interm_data_tot = 0
-                        s.data_tot = 0
-                        s.n_datasets = 0
-                        s.n_outputs = nout
-                        s.time = datetime.timedelta(seconds=0)
-                else:
-                    raise ValueError ('level not accepted (only raw and raw.crop)')
+        sublevel = '.'.join(level.split('.')[:-1])
+        temp = self.level_out(level)
+
+        try:
+            s = self.level_out(level+'.proc')
+            self._set_n_datasets(s,temp,ndata,'Processing',verbose)
             s.start = start
-            max_data = temp.n_datasets - s.n_datasets
-            if ndata == -1:
+            s.nout = nout
+            if did is not None:
+                if int(did) < int(s.did):
+                    s.did = did
+        except:
+            # print(level+'.proc not existing yet: initializing')
+            try:
+                temp.proc = PROC(temp,level,did)
+                s = temp.proc
+                self._set_n_datasets(s,temp,ndata,'Processing',verbose)
                 s.n_outputs = nout
-                s.this_run = max_data
-                s.n_datasets = temp.n_datasets
-                s.not_datasets = 0
-            elif ndata <= max_data:
-                s.n_datasets += ndata
-                s.not_datasets -= ndata
-                s.this_run = ndata
-            elif ndata > max_data:
-                # s.this_run = temp.n_datasets - s.n_datasets
-                print(s.start,f'WARNING: Processing, Exceeding the number of datasets, max should be {max_data}')
-                # s.n_datasets = max_data
-                # s.not_datasets -= ndata
-                s.n_datasets += ndata
-                s.not_datasets -= ndata
-                s.this_run = ndata
-            # elif type(ndata) == datetime.datetime:
-            #     s.end = ndata
-            #     s.this_run = min(s.not_datasets,int(ndata-start)/s.cpu_time)
-            #     s.n_datasets += s.this_run
-            #     s.not_datasets -= s.this_run
-                
-        else:
-            if not '.' in level:
-                temp = getattr(self,level)
-                self.proc = PROC()
-                s = self.proc
-            else:
-                level = level.split('.')
-                temp = self
-                for l in level:
-                    temp = getattr(temp,l)
-                if level[-1] == 'crop':
-                    self.proc = PROC()
-                    self.proc.crop = CROP()
-                    s = self.proc.crop
-                else:
-                    raise ValueError ('level not accepted (only raw and raw.crop)')
-            
-            s.start = start
-            s.cpu_time = datetime.timedelta(minutes=35) #TBD # update 20211015 info by JH and Nestor
-            s.n_outputs = nout
-            s.interm_data_tot = 0
-            s.data_tot = 0
-            s.n_datasets = 0
-            s.time = datetime.timedelta(seconds=0)
-            if ndata == -1:
-                s.this_run = temp.n_datasets
-                s.n_datasets = temp.n_datasets
-                s.not_datasets = 0
-            elif ndata <= temp.n_datasets:
-                s.this_run = ndata
-                s.n_datasets = ndata
-                s.not_datasets = temp.n_datasets - ndata
-            elif ndata > temp.n_datasets:
-                print(s.start,f'WARNING: Processing, Exceeding the number of datasets, max should be {temp.n_datasets}')
-                # s.n_datasets = temp.n_datasets
-                # s.this_run = temp.n_datasets
-                # s.not_datasets = temp.n_datasets - ndata
-                s.this_run = ndata
-                s.n_datasets = ndata
-                s.not_datasets = temp.n_datasets - ndata
-            # elif type(ndata) == datetime.datetime:
-            #     s.end = ndata
-            #     s.this_run = min(temp.n_datasets,int(ndata-start)/s.cpu_time)
-            #     s.n_datasets += self.proc.this_run
-            #     s.not_datasets = temp.n_datasets - s.this_run
-        
+                s.start = start
+
+            except:
+                print(sublevel,'sublevel do not exist: cannot proceed further with requested level',".".join(level))
+     
         s.end = s.start + s.cpu_time * s.this_run
         s.time += s.end - s.start
         # intermediate processing steps
@@ -297,224 +487,52 @@ class PHI_MODE:
             s.interm_steps = 5
         s.interm_n_bits = 32
         s.n_bits = 16
-        
-        
-        try:
-            s.crop_x = temp.crop_x
-            s.crop_y = temp.crop_y
-        except:
-            s.crop_x = self.raw.X
-            s.crop_y = self.raw.Y
-    
+         
         #MB of intermediate data + metadata
         s.interm_metadata = 8 * s.interm_steps * s.this_run
-        s.interm_data = roundup(round(temp.n_outputs*s.crop_x*s.crop_y,0)*\
+        s.interm_data = roundup(round(temp.n_outputs*s.X*s.Y,0)*\
                                  s.interm_n_bits / 8e6) * s.interm_steps * s.this_run
         s.interm_data_tot += s.interm_data + s.interm_metadata
 
         #MB of processed data + metadata
         s.metadata = 8 * s.this_run
-        s.data = roundup(round(s.crop_x*s.crop_y,0)*\
+        s.data = roundup(round(s.X*s.Y,0)*\
                           s.n_bits / 8e6 * s.n_outputs) * s.this_run
         s.data_tot += s.data + s.metadata
 
         return {'tm_type':PROC, 'val':s.data + s.metadata + s.interm_data + s.interm_metadata,\
                 'key':'proc', 'start':s.start, 'end':s.end}
-    
-    
-    
-    
-    
+
+     
     #############################################################################
     #############################################################################
     #############################################################################
-    
-    def compressing(self,start,nbits,ndata,level = 'proc'):
-#         class COMPR:
-#             pass
+        
+    def cropping(self,start,crop,ndata=-1,level='raw',did=None,verbose=True):
         self.__checkMode__(['HRT','FDT'])
-        if not hasattr(self,'raw'):
-            raise ValueError('You must run .observation() and .processing() before compressing! Bye bye.')
-        if not hasattr(self,'proc'):
-            if not hasattr(self.raw,'pack'):
-                raise ValueError('You must run .processing() before compressing! Bye bye.')
-        
-        if hasattr(self,'compr'):
-            
-            if not '.' in level:
-                temp = getattr(self,level)
-                try:
-                    s = self.compr
-                    n = s.n_datasets
-                except:
-                    # self.compr = COMPR()
-                    s = self.compr
-                    s.n_datasets = 0
-                    s.not_datasets = temp.n_datasets
-                    s.data_tot = 0
-                    s.n_datasets = 0
-            else:
-                level = level.split('.')
-                temp = self
-                for l in level:
-                    temp = getattr(temp,l)
-                if level[-1] == 'crop':
-                    try:
-                        s = self.compr.crop
-                    except:
-                        self.compr.crop = CROP()
-                        s = self.compr.crop
-                        s.n_datasets = 0
-                        s.not_datasets = temp.n_datasets
-                        # s.cpu_time = datetime.timedelta(minutes=1) #TBD
-                        s.data_tot = 0
-                        s.n_datasets = 0
-                        s.time = datetime.timedelta(seconds=0)
-                        
-                elif level[-1] == 'pack':
-                    try:
-                        s = self.compr.pack
-                    except:
-                        self.compr.pack = PACK()
-                        s = self.compr.pack
-                        s.n_datasets = 0
-                        s.not_datasets = temp.n_datasets
-                        # s.cpu_time = datetime.timedelta(minutes=1) #TBD
-                        s.data_tot = 0
-                        s.n_datasets = 0
-                        s.time = datetime.timedelta(seconds=0)
-                else:
-                    raise ValueError ('level not accepted')
+        sublevel = '.'.join(level.split('.')[:-1])
+        temp = self.level_out(level)
 
-            # Insert the FLUSH LIMIT
-
+        try:
+            s = self.level_out(level+'.crop')
+            self._set_n_datasets(s,temp,ndata,'Cropping',verbose)
             s.start = start
-            s.n_outputs = temp.n_outputs
-            max_data = temp.n_datasets - s.n_datasets
-            if ndata == -1:
-                s.this_run = temp.n_datasets - s.n_datasets
-                s.n_datasets = temp.n_datasets
-                s.not_datasets = 0
-            elif ndata <= max_data:
-                s.n_datasets += ndata
-                s.not_datasets -= ndata
-                s.this_run = ndata
-            elif ndata > max_data:
-                # s.this_run = max_data
-                print(s.start,f'WARNING: Compression: Exceeding the number of datasets, max should be {max_data}')
-                # s.n_datasets = temp.n_datasets
-                # s.not_datasets -= ndata
-                s.n_datasets += ndata
-                s.not_datasets -= ndata
-                s.this_run = ndata
-            # elif type(ndata) == datetime.datetime:
-            #     s.end = ndata
-            #     s.this_run = min(s.not_datasets,int(ndata-start)/s.cpu_time)
-            #     s.n_datasets += s.this_run
-            #     s.not_datasets -= s.this_run
+            if did is not None:
+                if int(did) < int(s.did):
+                    s.did = did
+        except:
+            # print(level+'.crop not existing yet: initializing')
+            try:
+                temp.crop = CROP(temp,level,did)
+                s = temp.crop
+                self._set_n_datasets(s,temp,ndata,'Cropping',verbose)
                 
-        else:
-            if not '.' in level:
-                temp = getattr(self,level)
-                self.compr = COMPR()
-                s = self.compr
-            else:
-                level = level.split('.')
-                temp = self
-                for l in level:
-                    temp = getattr(temp,l)
-                if level[-1] == 'crop':
-                    self.compr = COMPR()
-                    self.compr.crop = CROP()
-                    s = self.compr.crop
-                    
-                elif level[-1] == 'pack':
-                    self.compr = COMPR()
-                    self.compr.pack = PACK()
-                    s = self.compr.pack
-                else:
-                    raise ValueError ('level not accepted (only proc, proc.crop, proc.pack and raw.proc)')
-            
-            s.start = start
-            s.n_outputs = temp.n_outputs
-            # s.cpu_time = datetime.timedelta(minutes=1) #TBD
-            s.data_tot = 0
-            s.n_datasets = 0
-            s.time = datetime.timedelta(seconds=0)
-            if ndata == -1:
-                s.this_run = temp.n_datasets
-                s.n_datasets = temp.n_datasets
-                s.not_datasets = 0
-            elif ndata <= temp.n_datasets:
-                s.this_run = ndata
-                s.n_datasets = ndata
-                s.not_datasets = temp.n_datasets - ndata
-            elif ndata > temp.n_datasets:
-                print(s.start,f'WARNING: Compression: Exceeding the number of datasets, max should be {temp.n_datasets}')
-                # s.n_datasets = temp.n_datasets
-                # s.this_run = temp.n_datasets
-                # s.not_datasets = temp.n_datasets - ndata
-                s.this_run = ndata
-                s.n_datasets = ndata
-                s.not_datasets = temp.n_datasets - ndata
-            # elif type(ndata) == datetime.datetime:
-            #     s.end = ndata
-            #     s.this_run = min(temp.n_datasets,int(ndata-start)/s.cpu_time)
-            #     s.n_datasets += self.proc.this_run
-            #     s.not_datasets = temp.n_datasets - s.this_run
-        
-        if hasattr(temp,'crop_x'):
-            s.crop_x = temp.crop_x
-            s.crop_y = temp.crop_y
-            
-        else:
-            s.crop_x = self.raw.X
-            s.crop_y = self.raw.Y
+                s.start = start
 
-        s.cpu_time = datetime.timedelta(minutes=10) * s.crop_x * s.crop_y * s.n_outputs / 100663296 #TBD
-        s.n_bits = nbits
-            
-        #MB of compressed data + metadata
-        
-        if 'raw' in level:
-            s.data = (round(s.crop_x*s.crop_y,0)*\
-                                 s.n_bits / 8e6 * s.n_outputs + 9e-3) * s.this_run #raw metadata 9 kB, 0.7 MB before
-        else:
-            s.data = (round(s.crop_x*s.crop_y,0)*\
-                                 s.n_bits / 8e6 * s.n_outputs + 90e-3*s.n_outputs) * s.this_run #processed metadata 90*n_outputs kB, 0.7 MB before
-        
-        # if s.data > Flim['lim'][ti]:
-        #     data = s.data
-        #     s.flush_time = 0
-        #     s.end = s.start
-        #     while data > Flim['lim'][ti]:
-        #         vol_dataset = s.data / s.this_run
-        #         n_lim = Flim['lim'][ti] / vol_dataset
-        #         s.flush_time = datetime.timedelta(seconds=n_lim*vol_dataset*8) # 1 Mbit/s
-        #         s.end += datetime.timedelta(day=1)
-        # else:
-        s.flush_time = datetime.timedelta(seconds=s.data*8) # 1 Mbit/s
-        s.end = s.start + s.flush_time# + s.cpu_time * s.this_run
-        s.time += s.end - s.start
-        s.data_tot += s.data
-
-        return {'tm_type':COMPR, 'val':s.data,\
-                'key':'compr', 'start':s.start, 'end':s.end}
-    
-    
-    #############################################################################
-    #############################################################################
-    #############################################################################
-        
-    def cropping(self,start,crop,ndata=-1,level='raw'):
-        self.__checkMode__(['HRT','FDT'])
-        if not hasattr(self,'raw'):
-            raise ValueError('You must run at least .observation() before cropping! Bye bye.')
-#         try:
-#             temp = getattr(self,level)
-#         except:
-#             raise ValueError(f'The selected level ({level}) is not defined yet')
-                
+            except Exception as exc:
+                print(exc)
+                print(sublevel,'sublevel do not exist: cannot proceed further with requested level',".".join(level))
+               
         if isinstance(crop,int):
             crop_x = crop
             crop_y = crop
@@ -524,99 +542,65 @@ class PHI_MODE:
                 crop_y = crop[0]
         else:
             raise ValueError('crop variable must be an integer or a list with two integer elements (now only power of 2 are accepted)')
-            
-        try:
-            if not '.' in level:
-                temp = getattr(self,level)
 
-            else:
-                l = level.split('.')
-                temp = getattr(self,l[0])
-        except:
-            raise ValueError(f'The selected level ({level}) is not defined yet')
-        
-        if hasattr(temp,'crop'):
-            if not '.' in level:
-#                 temp = getattr(self,level)
-                s = temp.crop
-            else:
-                level = level.split('.')
-                temp = self
-                for l in level:
-                    temp = getattr(temp,l)
-                s = getattr(self,level[0]).crop
-              
-            s.start = start
-            max_data = temp.n_datasets - s.n_datasets
-            s.crop_x = crop_x
-            s.crop_y = crop_y
-            if ndata == -1:
-                s.this_run = max_data
-                s.n_datasets = temp.n_datasets
-                s.not_datasets = 0
-            elif ndata <= max_data:
-                s.this_run = ndata
-                s.n_datasets += ndata
-                s.not_datasets -= ndata
-            elif ndata > max_data:
-                print(s.start,f'WARNING: Cropping: Exceeding the number of datasets, max should be {max_data}')
-                # s.n_datasets = temp.n_datasets
-                # s.this_run = max_data
-                # s.not_datasets -= ndata
-                s.this_run = ndata
-                s.n_datasets += ndata
-                s.not_datasets -= ndata
-            # elif type(ndata) == datetime.datetime:
-            #     s.end = ndata
-            #     s.this_run = min(temp.n_datasets,int(ndata-start)/s.cpu_time)
-            #     s.n_datasets += s.this_run
-            #     s.not_datasets = temp.n_datasets - s.n_datasets     
-        else:
-            if not '.' in level:
-                temp = getattr(self,level)
-                temp.crop = CROP()
-                s = temp.crop
-            else:
-                level = level.split('.')
-                temp = self
-                for l in level:
-                    temp = getattr(temp,l)
-                getattr(self,level[0]).crop = CROP()
-                s = getattr(self,level[0]).crop
-                        
-            s.level = level
-            s.start = start
-            s.crop_x = crop_x
-            s.crop_y = crop_y
-            # s.cpu_time = datetime.timedelta(minutes=1) #TBD
-            s.n_outputs = temp.n_outputs
-            s.data_tot = 0
-            s.n_datasets = 0
-            s.time = datetime.timedelta(seconds=0)
-            if ndata == -1:
-                s.this_run = temp.n_datasets
-                s.n_datasets = temp.n_datasets
-                s.not_datasets = 0
-            elif ndata <= temp.n_datasets:
-                s.this_run = ndata
-                s.n_datasets = ndata
-                s.not_datasets = s.n_datasets - ndata
-            elif ndata > temp.n_datasets:
-                print(s.start,f'WARNING: Cropping: Exceeding the number of datasets, max should be {temp.n_datasets}')
-                # s.n_datasets = temp.n_datasets
-                # s.this_run = temp.n_datasets
-                # s.not_datasets = s.n_datasets - ndata
-                s.this_run = ndata
-                s.n_datasets = ndata
-                s.not_datasets = s.n_datasets - ndata
-            # elif type(ndata) == datetime.datetime:
-            #     s.end = ndata
-            #     s.this_run = min(temp.n_datasets,int(ndata-start)/s.cpu_time)
-            #     s.n_datasets += s.this_run
-            #     s.not_datasets = s.n_datasets - s.this_run
-        
+        s.X = crop_x
+        s.Y = crop_y
+
         # s.cpu_time = datetime.timedelta(seconds=120) * self.raw.X * self.raw.Y * s.n_outputs / 100663296 #TBD according to FCP_710
-        s.cpu_time = datetime.timedelta(seconds=self.raw.n_bits * self.raw.X * self.raw.Y * s.n_outputs / 8 / 2**20 * 0.117 + 22.054) # Operations / ProcessingDuration
+        s._compute_cpu_time(temp)
+        
+        s.end = s.start + s.cpu_time * s.this_run
+        s.time += s.end - s.start
+        
+        # s.end = s.start + s.cpu_time * s.this_run
+        
+        s.n_bits = temp.n_bits
+        if 'pack' in level:
+            s.n_bits = 16
+        
+        #MB of processed data + metadata
+        
+        s.metadata = 8 * s.this_run
+        s.data = roundup(round(s.X*s.Y,0)*\
+                                s.n_bits * s.n_outputs / 8e6)* s.this_run
+        
+        s.data_tot += s.data + s.metadata
+        return {'tm_type':CROP, 'val':s.data + s.metadata,\
+                'key':'crop', 'start':s.start, 'end':s.end}
+    
+
+    #############################################################################
+    #############################################################################
+    #############################################################################
+        
+    def binning(self,start,bin_factor,ndata=-1,level='raw',did=None,verbose=True):
+        self.__checkMode__(['HRT','FDT'])
+        sublevel = '.'.join(level.split('.')[:-1])
+        temp = self.level_out(level)
+
+        try:
+            s = self.level_out(level+'.bin')
+            self._set_n_datasets(s,temp,ndata,'Binning',verbose)
+            s.start = start
+            if did is not None:
+                if int(did) < int(s.did):
+                    s.did = did
+        except:
+            # print(level+'.bin not existing yet: initializing')
+            try:
+                temp.bin = BIN(temp,level,did)
+                s = temp.bin
+                self._set_n_datasets(s,temp,ndata,'Binning',verbose)
+                
+                s.start = start
+
+            except Exception as exc:
+                print(exc)
+                print(sublevel,'sublevel do not exist: cannot proceed further with requested level',".".join(level))
+        
+        s.bin_factor = bin_factor
+        s.X = int(temp.X/bin_factor)
+        s.Y = int(temp.Y/bin_factor)
 
         s.end = s.start + s.cpu_time * s.this_run
         s.time += s.end - s.start
@@ -629,18 +613,60 @@ class PHI_MODE:
         
         #MB of processed data + metadata
         
-        if 'raw' in level:
-            s.metadata = 8 * s.this_run
-            s.data = roundup(round(s.crop_x*s.crop_y,0)*\
-                                 s.n_bits / 8e6 * s.n_outputs) * s.this_run
-        else:
-            s.metadata = 8 * s.this_run
-            s.data = roundup(round(s.crop_x*s.crop_y,0)*\
-                                 s.n_bits * s.n_outputs / 8e6)* s.this_run
+        s.metadata = 8 * s.this_run
+        s.data = roundup(round(s.X*s.Y,0)*\
+                                s.n_bits * s.n_outputs / 8e6)* s.this_run
         
         s.data_tot += s.data + s.metadata
-        return {'tm_type':CROP, 'val':s.data + s.metadata,\
+        return {'tm_type':BIN, 'val':s.data + s.metadata,\
                 'key':'crop', 'start':s.start, 'end':s.end}
+    
+     
+    #############################################################################
+    #############################################################################
+    #############################################################################
+    
+    def compressing(self,start,nbits,ndata,level = 'proc',verbose=True):
+        self.__checkMode__(['HRT','FDT'])
+        sublevel = '.'.join(level.split('.')[:-1])
+        temp = self.level_out(level)
+
+        try:
+            s = self.level_out(level+'.compr')
+            self._set_n_datasets(s,temp,ndata,'Compression',verbose)
+            s.start = start
+            
+        except:
+            # print(level+'.compr not existing yet: initializing')
+            try:
+                temp.compr = COMPR(temp,level)
+                s = temp.compr
+                self._set_n_datasets(s,temp,ndata,'Compression',verbose)
+                
+                s.start = start
+
+            except:
+                print(level,'sublevel do not exist: cannot proceed further with requested level',".".join(level))
+
+        s.n_bits = nbits
+            
+        #MB of compressed data + metadata
+        if 'proc' in level:
+            s.metadata = 90e-3*s.n_outputs*s.this_run
+        else:
+            s.metadata = 9e-3*s.this_run
+
+        s.data = (round(s.X*s.Y,0)*\
+                                s.n_bits / 8e6 * s.n_outputs) * s.this_run #processed metadata 90*n_outputs kB, 0.7 MB before
+        
+        s._compute_cpu_time()
+        
+        s.end = s.start + s.cpu_time# + s.cpu_time * s.this_run
+        s.time += s.end - s.start
+        s.data_tot += s.data + s.metadata
+
+        return {'tm_type':COMPR, 'val':s.data+s.metadata,\
+                'key':'compr', 'start':s.start, 'end':s.end}
     
     
     #############################################################################
@@ -648,242 +674,96 @@ class PHI_MODE:
     #############################################################################
      
         
-    def packing(self,start,ndata=-1,level='raw'):
+    def packing(self,start,ndata=-1,level='raw',did=None,verbose=True):
+
         self.__checkMode__(['HRT','FDT'])
-        if not hasattr(self,'raw'):
-            raise ValueError('You must run at least .observation() before cropping! Bye bye.')
-                   
+        sublevel = '.'.join(level.split('.')[:-1])
+        temp = self.level_out(level)
+
         try:
-            if not '.' in level:
-                temp = getattr(self,level)
-
-            else:
-                l = level.split('.')
-                temp = getattr(self,l[0])
+            s = self.level_out(level+'.pack')
+            self._set_n_datasets(s,temp,ndata,'Packing',verbose)
+            s.start = start
+            if did is not None:
+                if int(did) < int(s.did):
+                    s.did = did
         except:
-            raise ValueError(f'The selected level ({level}) is not defined yet')
-        
-        if hasattr(temp,'pack'):
-            if not '.' in level:
-#                 temp = getattr(self,level)
+            # print(level+'.pack not existing yet: initializing')
+            try:
+                temp.pack = PACK(temp,level,did)
                 s = temp.pack
-            else:
-                level = level.split('.')
-                temp = self
-                for l in level:
-                    temp = getattr(temp,l)
-                s = getattr(self,level[0]).pack
-              
-            s.start = start
-            max_data = temp.n_datasets - s.n_datasets
-            s.n_bits = 16
-#             s.crop_x = crop_x
-#             s.crop_y = crop_y
-            if ndata == -1:
-                s.this_run = max_data
-                s.n_datasets = temp.n_datasets
-                s.not_datasets = 0
-            elif ndata <= max_data:
-                s.this_run = ndata
-                s.n_datasets += ndata
-                s.not_datasets -= ndata
-            elif ndata > max_data:
-                print(s.start,f'WARNING: Packing: Exceeding the number of datasets, should be {temp.n_datasets}')
-                # s.n_datasets = temp.n_datasets
-                # s.this_run = max_data
-                # s.not_datasets -= ndata
-                s.this_run = ndata
-                s.n_datasets += ndata
-                s.not_datasets -= ndata
-            # elif type(ndata) == datetime.datetime:
-            #     s.end = ndata
-            #     s.this_run = min(temp.n_datasets,int(ndata-start)/s.cpu_time)
-            #     s.n_datasets += s.this_run
-            #     s.not_datasets = temp.n_datasets - s.n_datasets     
-        else:
-            if not '.' in level:
-                temp = getattr(self,level)
-                temp.pack = PACK()
-                s = temp.pack
-            else:
-                level = level.split('.')
-                temp = self
-                for l in level:
-                    temp = getattr(temp,l)
-                getattr(self,level[0]).pack = PACK()
-                s = getattr(self,level[0]).pack
-                        
-            s.level = level
-            s.start = start
-            s.n_bits = 16
-            s.n_outputs = temp.n_outputs
-            s.data_tot = 0
-            s.n_datasets = 0
-            s.time = datetime.timedelta(seconds=0)
-            if ndata == -1:
-                s.this_run = temp.n_datasets
-                s.n_datasets = temp.n_datasets
-                s.not_datasets = 0
-            elif ndata <= temp.n_datasets:
-                s.this_run = ndata
-                s.n_datasets = ndata
-                s.not_datasets = s.n_datasets - ndata
-            elif ndata > temp.n_datasets:
-                print(s.start,f'WARNING: Packing: Exceeding the number of datasets, should be {temp.n_datasets}')
-                # s.n_datasets = temp.n_datasets
-                # s.this_run = temp.n_datasets
-                # s.not_datasets = s.n_datasets - ndata
-                s.this_run = ndata
-                s.n_datasets = ndata
-                s.not_datasets = s.n_datasets - ndata
-            # elif type(ndata) == datetime.datetime:
-            #     s.end = ndata
-            #     s.this_run = min(temp.n_datasets,int(ndata-start)/s.cpu_time)
-            #     s.n_datasets += s.this_run
-            #     s.not_datasets = s.n_datasets - s.this_run
-        
-        if hasattr(temp,'crop_x'):
-            s.crop_x = temp.crop_x
-            s.crop_y = temp.crop_y
-            
-        else:
-            s.crop_x = self.raw.X
-            s.crop_y = self.raw.Y
+                self._set_n_datasets(s,temp,ndata,'Packing',verbose)
+                
+                s.start = start
 
-        # s.cpu_time = datetime.timedelta(seconds=120) * s.crop_x * s.crop_y * s.n_outputs / 100663296 #TBD JH dice 120s per stare sicuri da FCP_709
-        s.cpu_time = datetime.timedelta(seconds = self.raw.n_bits * s.crop_x * s.crop_y * s.n_outputs / 8 / 2**20 * 0.1471 + 27.32) # Operations / ProcessingDuration
+            except Exception as exc:
+                print(exc)
+                print(level,'sublevel do not exist: cannot proceed further with requested level',level+".pack")
+
+        # s.cpu_time = datetime.timedelta(seconds=120) * self.raw.X * self.raw.Y * s.n_outputs / 100663296 #TBD according to FCP_710
+        s._compute_cpu_time(temp)
+        
         s.end = s.start + s.cpu_time * s.this_run
         s.time += s.end - s.start
         
-        #MB of packed data + metadata
+        # s.end = s.start + s.cpu_time * s.this_run
         
-        if 'raw' in level:
-            s.metadata = 8 * s.this_run
-            s.data = roundup(round(s.crop_x*s.crop_y,0)*\
-                                 s.n_bits / 8e6 * s.n_outputs) * s.this_run
-        else:
-            s.metadata = 8 * s.this_run
-            s.data = roundup(round(s.crop_x*s.crop_y,0)*\
-                                 s.n_bits * s.n_outputs / 8e6) * s.this_run
+        s.n_bits = 16
+        
+        #MB of processed data + metadata
+        s.metadata = 8 * s.this_run
+        s.data = roundup(round(s.X*s.Y,0)*\
+                                s.n_bits * s.n_outputs / 8e6) * s.this_run
         
         s.data_tot += s.data + s.metadata
         return {'tm_type':PACK, 'val':s.data + s.metadata,\
                 'key':'pack', 'start':s.start, 'end':s.end}
-    
-    
-    
-    #############################################################################
-    #############################################################################
-    #############################################################################
-    
-    # def extract(self,start,level = 'raw'):
-    #     self.__checkMode__(['HRT','FDT'])
-    #     if not hasattr(self,'raw'):
-    #         raise ValueError('You must run at least .observation() before extracting! Bye bye.')
-    #     try:
-    #         if not '.' in level:
-    #             new = getattr(self,level)
 
-    #         else:
-    #             level = level.split('.')
-    #             new = self
-    #             for l in level:
-    #                 new = getattr(new,l)
-    #     except:
-    #         raise ValueError(f'The selected level ({level}) is not defined yet')
-        
-    #     new.data = new.data / new.this_run / new.n_outputs
-    #     new.n_datasets = 1
-    #     new.this_run = 1
-    #     new.not_dataset = 0
-    #     new.n_outputs = 1
-    #     new.start = start
-    #     new.cpu_time = datetime.timedelta(minutes=2) #TBD
-    #     new.end = new.start + new.cpu_time * new.this_run
-        
-    #     if type(new) == RAW:
-    #         temp = PHI_MODE('HRT')
-    #         temp.raw = new
-    #     elif type(new) == PROC:
-    #         temp = PHI_MODE('HRT')
-    #         temp.proc = new
-    #     elif type(new) == COMPR:
-    #         temp = PHI_MODE('HRT')
-    #         temp.compr = new
-    #     elif type(new) == CROP:
-    #         temp = PHI_MODE('HRT')
-    #         temp.crop = new
-    #     elif type(new) == PACK:
-    #         temp = PHI_MODE('HRT')
-    #         temp.pack = new
-        
-    #     return (temp, {'tm_type':type(new), 'val':new.data,\
-    #             'key':'proc', 'start':new.start, 'end':new.end})
+    #############################################################################
+    #############################################################################
+    #############################################################################
     
-    def extract(self,start,nimage = 1, level = 'raw'):
+    def extract(self,start,level = 'proc',did=None):
+
         self.__checkMode__(['HRT','FDT'])
-        if not hasattr(self,'raw'):
-            raise ValueError('You must run at least .observation() before extracting! Bye bye.')
+        sublevel = '.'.join(level.split('.')[:-1])
+        temp = self.level_out(level)
+        ndata = 1
         try:
-            if not '.' in level:
-                temp = getattr(self,level)
-                lev = level
-
-            else:
-                level = level.split('.')
-                temp = self
-                for l in level:
-                    temp = getattr(temp,l)
-                lev = level[-1]
+            s = self.level_out(level+'.extr')
+            self._set_n_datasets(s,temp,ndata,'Extraction')
+            s.start = start
+            if did is not None:
+                s.did = did
         except:
-            raise ValueError(f'The selected level ({level}) is not defined yet')
-        
-        temp.start = start
-        temp.end = temp.start + datetime.timedelta(minutes=.5) * nimage #TBD
-        temp.metadata = 8 * nimage
-        temp.data_tot += temp.metadata
-        return {'tm_type':type(temp), 'val':temp.metadata,\
-                'key':lev, 'start':temp.start, 'end':temp.end}
-    
-    #############################################################################
-    #############################################################################
-    #############################################################################
-     
+            # print(level+'.extr not existing yet: initializing')
+            try:
+                temp.extr = EXTR(temp,level,did)
+                s = temp.extr
+                self._set_n_datasets(s,temp,ndata,'Extraction')
+                
+                s.start = start
 
-    def flushing(self,start,end,data_vol):
-        self.__checkMode__('FLUSH')
-        self.flush = FLUSH()
-        self.flush.start = start
-        self.flush.end = end
-        self.flush.data = data_vol #MB
+            except:
+                print(level,'sublevel do not exist: cannot proceed further with requested level',".".join(level))
+
+        #MB of compressed data + metadata
         
-        return {'tm_type':type(self.flush), 'val':self.flush.data,\
-                'key':'flush', 'start':self.flush.start, 'end':self.flush.end}
+        s.metadata = 8 * s.this_run
+        s.data = roundup(round(s.X*s.Y,0)*s.n_bits / 8e6 * s.n_outputs) * s.this_run
     
-        
-        
-    def calibration(self,start,end,data_vol,insert='data_vol'):
-        self.__checkMode__('CAL')
-        self.cal = CAL()
-        self.cal.start = start
-        self.cal.end = end
-        
-        if insert == 'data_vol':
-            self.cal.data = data_vol #MB
-            return {'tm_type':type(self.cal), 'val':self.cal.data,\
-                'key':'cal', 'start':self.cal.start, 'end':self.cal.end}
-        
-        if insert == 'n_datasets':
-            n_datasets = data_vol
-            data_vol = roundup(2048*2048*24*32/8e6 *(32+16)/32) * n_datasets
-            compr_vol = (2048*2048*24*6/8e6 + 0.7) * n_datasets
-            self.cal.data = data_vol #MB
-            self.cal.metadata = 8 * n_datasets
-            return ({'tm_type':type(self.cal), 'val':self.cal.data + self.cal.metadata,\
-                'key':'cal', 'start':self.cal.start, 'end':self.cal.end},
-                   {'tm_type':type(self.cal), 'val':compr_vol,\
-                'key':'compr', 'start':self.cal.start, 'end':self.cal.end})
-        
+        s.end = s.start + s.cpu_time * s.this_run
+        s.time += s.end - s.start
+        s.data_tot += s.data + s.metadata
+
+        return {'tm_type':EXTR, 'val':s.data + s.metadata,\
+                'key':level.split('.')[-1], 'start':s.start, 'end':s.end}
+    
+    
+    
+    #############################################################################
+    #############################################################################
+    ############################################################################# 
         
 
 class PHI_MEMORY:
@@ -1229,7 +1109,7 @@ class PHI_MEMORY:
 
 def printp(a0,label=None,gui=None):
     meta = a0.raw.metadata
-    tot = a0.raw.data_tot
+    tot = 0
     
     if gui == True:
         from streamlit import write
@@ -1243,71 +1123,44 @@ def printp(a0,label=None,gui=None):
     printing('duration:',a0.raw.end - a0.raw.start)
     printing('amount of raw-data at',a0.raw.n_bits,'bits:',round(a0.raw.data_tot*1e6/2**20,1), 'MiB,',round(a0.raw.data_tot*1e6/2**20/a0.raw.n_datasets,1),'MiB per dataset')
 
-    if hasattr(a0.raw,'crop'):
-        val = a0.raw.crop.data_tot
-        printing('amount of crop-data at',a0.raw.n_bits,'bits:',round(val*1e6/2**20,1), \
-              'MiB,',round(val*1e6/2**20/a0.raw.n_datasets,1),'MiB per dataset')
-        meta += a0.raw.crop.metadata
-        tot += a0.raw.crop.data_tot
-        printing('cropping time:',a0.raw.crop.time)
+    levels, _, _ = levels_did_out(a0)
+    
+    for l in levels:
+        a1 = a0.level_out(l)
+        if l.split(".")[-1] != 'compr':
+            tot += a1.data_tot
         
-    
-    if hasattr(a0.raw,'pack'):
-        val = a0.raw.pack.data_tot
-        printing('amount of pack-data at',a0.raw.pack.n_bits,'bits:',round(val*1e6/2**20,1), \
-              'MiB,',round(val*1e6/2**20/a0.raw.n_datasets,1),'MiB per dataset')
-        meta += a0.raw.pack.metadata
-        tot += a0.raw.pack.data_tot
-        printing('packing time:',a0.raw.pack.time)
+        if l.split(".")[-1] == 'crop':
+            val =a1.data_tot
+            printing('crop size:',a1.X)
+            printing('amount of crop-data at',a1.n_bits,'bits:',round(val*1e6/2**20,1), \
+                'MiB,',round(val*1e6/2**20/a1.n_datasets,1),'MiB per dataset')
+            meta += a1.metadata
+            printing('cropping time:',a1.time)
+        
+        if l.split(".")[-1] == 'pack':
+                val = a1.data_tot
+                printing('amount of pack-data at',a1.n_bits,'bits:',round(val*1e6/2**20,1), \
+                    'MiB,',round(val*1e6/2**20/a1.n_datasets,1),'MiB per dataset')
+                meta += a1.metadata
+                printing('packing time:',a1.time)
 
-    if hasattr(a0,'proc'):
-        if hasattr(a0.proc,'crop'):
-            val = a0.proc.crop.data_tot + a0.proc.crop.interm_data_tot
-            val_d = a0.proc.crop.data_tot
-            nbit = a0.proc.crop.n_bits
-            meta += a0.proc.crop.metadata
-            tot += a0.proc.crop.data_tot + a0.proc.crop.interm_data_tot
-            printing('processing time:',a0.proc.crop.time)
-        else:
-            val = a0.proc.data_tot + a0.proc.interm_data_tot
-            val_d = a0.proc.data_tot
-            nbit = a0.proc.n_bits
-            meta += a0.proc.metadata
-            tot += a0.proc.data_tot + a0.proc.interm_data_tot
-            printing('processing time:',a0.proc.time)
+        if l.split(".")[-1] == 'proc':
+                val = a1.data_tot + a1.interm_data_tot
+                val_d = a1.data_tot
+                nbit = a1.n_bits
+                meta += a1.metadata
+                printing('amount of processed data (and intermediate data) at',nbit,'bits:',round(val*1e6/2**20,1), 'MiB,',round(val_d*1e6/2**20/a1.n_datasets,1),'MiB per dataset')
+                printing('processing time:',a1.time)
 
-        printing('amount of processed data (and intermediate data) at',nbit,'bits:',round(val*1e6/2**20,1), 'MiB,',round(val_d*1e6/2**20/a0.raw.n_datasets,1),'MiB per dataset')
-    
-    if hasattr(a0,'compr'):
-        if hasattr(a0.compr,'crop'):
-            val = a0.compr.crop.data_tot
-            nbit = a0.compr.crop.n_bits
-            ndata = a0.compr.crop.n_datasets
-            printing('compressing (+ flushing) time:',a0.compr.crop.time)
-            # printing('flushing time:',a0.compr.crop.flush_time)
-            # meta += a0.compr.crop.metadata
-            # tot += a0.compr.crop.data_tot
-            # printing('tot_step5:', tot*1e6/2**20)
-        elif hasattr(a0.compr,'pack'):
-            val = a0.compr.pack.data_tot
-            nbit = a0.compr.pack.n_bits
-            ndata = a0.compr.pack.n_datasets
-            printing('compressing (+ flushing) time:',a0.compr.pack.time)
-            # printing('flushing time:',a0.compr.pack.flush_time)
-            # meta += a0.compr.pack.metadata
-            # tot += a0.compr.pack.data_tot
-            # printing('tot_step6:', tot*1e6/2**20)
-        else:
-            val = a0.compr.data_tot
-            nbit = a0.compr.n_bits
-            ndata = a0.compr.n_datasets
-            printing('compressing (+ flushing) time:',a0.compr.time)
-            # printing('flushing time:',a0.compr.flush_time)
-            # meta += a0.compr.metadata
-            # tot += a0.compr.data_tot
-            # printing('tot_step7:', tot*1e6/2**20)
-        printing('amount of compressed data + metadata at',nbit,'bits:',round(val*1e6/2**20,1), 'MiB,',round(val*1e6/2**20/ndata,1),'MiB per dataset')
-    
+        if l.split(".")[-1] == 'compr':
+                val = a1.data_tot
+                nbit = a1.n_bits
+                ndata = a1.n_datasets
+                meta += a1.metadata
+                printing('amount of compressed data + metadata at',nbit,'bits:',round(val*1e6/2**20,1), 'MiB,',round(val*1e6/2**20/ndata,1),'MiB per dataset')
+                printing('compressing (+ flushing) time:',a1.time)
+                
     printing('amount of metadata: ', meta, 'MiB')
     printing('amount of memory usage:',round((tot)*1e6/2**20,1), 'MiB')
     printing('')
