@@ -545,6 +545,7 @@ class PHI_MODE():
 
         s.X = crop_x
         s.Y = crop_y
+        s.n_pix = s.X * s.Y * s.L * s.P
 
         # s.cpu_time = datetime.timedelta(seconds=120) * self.raw.X * self.raw.Y * s.n_outputs / 100663296 #TBD according to FCP_710
         s._compute_cpu_time(temp)
@@ -1242,7 +1243,7 @@ def _load_csv(phi_memory,fname):
             dict1['end'][i] = datetime.datetime.fromisoformat(str(val))
 
 
-        Class_list = [PHI_MEMORY, RAW, PROC, CROP, PACK, COMPR, CAL, FLUSH, PHI_MODE, PHI_MEMORY.format_partition]
+        Class_list = [PHI_MEMORY, RAW, PROC, CROP, PACK, COMPR, PHI_MODE, PHI_MEMORY.format_partition]
         stringClass_list = [str(s) for s in Class_list]; stringClass_list[-1] = stringClass_list[-1][:-19]
         
         for l, val in enumerate(dict1['type']):
