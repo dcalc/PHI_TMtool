@@ -652,13 +652,19 @@ class PHI_MODE():
         s.n_bits = nbits
             
         #MB of compressed data + metadata
+        # 20230613 JH is using 100 kB of metadata in his macros + 1.007 packetization factor for each dataset --> same
         if 'proc' in level:
-            s.metadata = 90e-3*s.n_outputs*s.this_run
+            # s.metadata = 90e-3*s.n_outputs*s.this_run
+            s.metadata = 100e-3*s.n_outputs*s.this_run
         else:
-            s.metadata = 9e-3*s.this_run
+            # s.metadata = 9e-3*s.this_run
+            s.metadata = 100e-3*s.this_run
 
+        # s.data = (round(s.X*s.Y,0)*\
+        #                         s.n_bits / 8e6 * s.n_outputs) * s.this_run #processed metadata 90*n_outputs kB, 0.7 MB before
+        
         s.data = (round(s.X*s.Y,0)*\
-                                s.n_bits / 8e6 * s.n_outputs) * s.this_run #processed metadata 90*n_outputs kB, 0.7 MB before
+                                s.n_bits / 8e6 * s.n_outputs * 1.007) * s.this_run # with packetization overhead, email by JH on 02.06.2023
         
         s._compute_cpu_time()
         
