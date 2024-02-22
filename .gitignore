@@ -17,3 +17,6 @@ stp/*
 *.yaml
 validator/
 validator/*
+IORs/
+IORs/*
+planning_from_csv.ipynb
